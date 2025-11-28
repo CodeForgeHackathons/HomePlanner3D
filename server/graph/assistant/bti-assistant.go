@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"time"
 )
 
@@ -52,9 +51,6 @@ func AskAgent(userQuestion string) (string, error) {
 		},
 		Messages: []Message{
 			{
-				Role: "system",
-			},
-			{
 				Role: "user",
 				Text: userQuestion,
 			},
@@ -69,7 +65,12 @@ func AskAgent(userQuestion string) (string, error) {
 }
 
 func sendToYandexAI(request YandexAIRequest) (string, error) {
-	iamToken := os.Getenv("YANDEX_CLOUD_API_KEY")
+	iamToken := ""
+
+	if iamToken == "" {
+		return "", fmt.Errorf("Api key not found")
+	}
+
 	jsonData, err := json.Marshal(request)
 	if err != nil {
 		return "", fmt.Errorf("ошибка создания JSON: %w", err)

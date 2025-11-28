@@ -36,13 +36,13 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 }
 
 // AskBTIagent is the resolver for the askBTIagent field.
-func (r *mutationResolver) AskBTIagent(ctx context.Context, input model.BtiAgent) (string, error) {
+func (r *mutationResolver) AskBTIagent(ctx context.Context, input model.BtiAgent) (*string, error) {
 	request, err := assistant.AskAgent(input.Prompt)
 
 	if err != nil {
-		return "", err
+		return nil, err
 	}
-	return request, nil
+	return &request, nil
 }
 
 // GetUser is the resolver for the getUser field.
@@ -72,22 +72,3 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
-
-// !!! WARNING !!!
-// The code below was going to be deleted when updating resolvers. It has been copied here so you have
-// one last chance to move it out of harms way if you want. There are two reasons this happens:
-//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
-//    it when you're done.
-//  - You have helper methods in this file. Move them out to keep these resolver files clean.
-/*
-	func (r *queryResolver) AskBTIagent(ctx context.Context, prompt string) (string, error) {
-	log.Println("askBTIagent called with input:", prompt)
-	answer, err := assistant.AskBTIAgent(prompt)
-
-	if err != nil {
-		return "", err
-	}
-	return answer, nil
-
-}
-*/
