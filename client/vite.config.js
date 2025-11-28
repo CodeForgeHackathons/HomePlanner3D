@@ -9,5 +9,18 @@ export default defineConfig({
   },
   worker: {
     format: 'es'
+  },
+  server: {
+    proxy: {
+      // Прокси для TensorFlow Hub (обход CORS)
+      '/tfhub': {
+        target: 'https://tfhub.dev',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/tfhub/, ''),
+        headers: {
+          'Access-Control-Allow-Origin': '*'
+        }
+      }
+    }
   }
 })
