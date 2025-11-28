@@ -2,13 +2,15 @@
   <div class="page">
     <header class="hero">
       <div class="hero__content">
-        <p class="hero__badge">HomePlanner3D</p>
+        <p class="hero__badge">HomePlanner3D · цифровой помощник перепланировки</p>
         <h1>
-          HomePlanner3D — перепланируйте уверенно и без лишних рисков
+          HomePlanner3D — перепланируйте уверенно, легально и наглядно
         </h1>
         <p class="hero__subtitle">
-          Загрузите план квартиры, получите автоматический анализ несущих стен,
-          проверку норм и готовые варианты перепланировок с 3D визуализацией.
+          Загрузите техпаспорт или эскиз, мгновенно получите 2.5D план, вид от
+          первого лица, проверку СНиПов и AI-сценарии. Вся 3D-сцена строится
+          автоматически по данным, которые мы собираем, а визуализацией занимается
+          партнёр-команда.
         </p>
         <div class="hero__actions">
           <button class="btn btn--primary">Загрузить план</button>
@@ -29,6 +31,10 @@
 
     <section class="flow">
       <h2>Как это работает</h2>
+      <p class="flow__subtitle">
+        Пять шагов от загрузки техпаспорта до заявки в БТИ: распознаём, даём
+        конструктор, проверяем, предлагаем AI-варианты и подключаем экспертов.
+      </p>
       <div class="flow__steps">
         <article v-for="(step, index) in steps" :key="step.title" class="step">
           <div class="step__number">{{ index + 1 }}</div>
@@ -64,6 +70,34 @@
           <p>После</p>
           <div class="preview-card__plan preview-card__plan--clean"></div>
         </div>
+      </div>
+    </section>
+
+    <section class="builder">
+      <div class="section-header">
+        <h2>Игровой конструктор HomePlanner3D</h2>
+        <p>
+          Мы собираем структурированные данные (геометрия, стены, ограничения) и
+          отдаём их в Unity-скрипт напарника. Пользователь видит 2.5D план, режим
+          “от первого лица”, может сносить стены, добавлять перегородки и расставлять
+          базовую мебель.
+        </p>
+      </div>
+      <div class="builder__grid">
+        <article
+          v-for="tool in builderTools"
+          :key="tool.title"
+          class="builder-card"
+        >
+          <h3>{{ tool.title }}</h3>
+          <p>{{ tool.description }}</p>
+        </article>
+      </div>
+      <div class="builder__modes">
+        <article v-for="mode in builderModes" :key="mode.title" class="mode-card">
+          <h3>{{ mode.title }}</h3>
+          <p>{{ mode.description }}</p>
+        </article>
       </div>
     </section>
 
@@ -112,14 +146,37 @@
       </div>
     </section>
 
+    <section class="ai">
+      <div class="section-header">
+        <h2>AI-варианты перепланировки</h2>
+        <p>
+          Генеративный модуль создаёт 3–5 сценариев на основе ваших целей и набора
+          ограничений. Каждый вариант проверяется нормами до того, как попадает в
+          конструктор.
+        </p>
+      </div>
+      <div class="ai__grid">
+        <article v-for="variant in aiVariants" :key="variant.title" class="ai-card">
+          <div class="ai-card__badge">{{ variant.focus }}</div>
+          <h3>{{ variant.title }}</h3>
+          <p>{{ variant.description }}</p>
+          <ul>
+            <li v-for="point in variant.points" :key="point">{{ point }}</li>
+          </ul>
+        </article>
+      </div>
+      <button class="btn btn--primary btn--small">Запросить варианты AI</button>
+    </section>
+
     <section class="demo">
       <div class="demo__media"></div>
       <div class="demo__content">
         <h2>Интерактивная 3D и AR визуализация</h2>
         <p>
-          Посмотрите, как меняются стены и мебель в реальном времени. Делитесь
-          сценой с семьёй или архитектором, оставляйте комментарии и закрепляйте
-          правки.
+          Посмотрите, как меняются стены и мебель в реальном времени. Сцену
+          рендерит отдельный Unity-скрипт напарника, которому мы передаём всю
+          геометрию и ограничения. Делитесь режимом сверху и прогулкой от первого
+          лица с семьёй или архитектором.
         </p>
         <button class="btn btn--primary">Попробовать демо</button>
       </div>
@@ -137,6 +194,53 @@
           <p class="testimonial-card__author">
             {{ testimonial.author }} · {{ testimonial.type }}
           </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="experts">
+      <div class="experts__content">
+        <h2>Подключение экспертов БТИ</h2>
+        <p>
+          Когда сценарий устроил пользователя и прошёл проверки, он оставляет
+          заявку на оформление документации и выезд специалиста. Мы передаём весь
+          пакет данных и чертежей в БТИ без повторного ввода.
+        </p>
+        <ul>
+          <li v-for="channel in expertChannels" :key="channel">
+            {{ channel }}
+          </li>
+        </ul>
+      </div>
+      <form class="experts__form">
+        <label>
+          Имя и город
+          <input type="text" placeholder="Мария, Москва" />
+        </label>
+        <label>
+          Контакт
+          <input type="text" placeholder="@telegram или телефон" />
+        </label>
+        <label>
+          Комментарий
+          <textarea placeholder="Квартира 62 м², нужен проект перепланировки"></textarea>
+        </label>
+        <button type="button" class="btn btn--primary">Отправить заявку</button>
+      </form>
+    </section>
+
+    <section class="bti">
+      <div class="section-header">
+        <h2>Зачем это БТИ</h2>
+        <p>
+          HomePlanner3D превращает БТИ в digital-сервис: приводит горячих клиентов,
+          повышает доверие и открывает подписочную монетизацию.
+        </p>
+      </div>
+      <div class="bti__grid">
+        <article v-for="benefit in btiBenefits" :key="benefit.title" class="bti-card">
+          <h3>{{ benefit.title }}</h3>
+          <p>{{ benefit.description }}</p>
         </article>
       </div>
     </section>
@@ -175,16 +279,64 @@
 <script setup>
 const steps = [
   {
-    title: 'Загрузите план или фото',
-    description: 'PDF, фото со смартфона или BIM — мы распознаём всё.',
+    title: 'Распознаём план',
+    description:
+      'Загрузите PDF, DWG или фото — алгоритм строит точную геометрию и сетку помещений.',
   },
   {
-    title: 'Получите анализ и проверки',
-    description: 'Выявляем несущие стены, мокрые зоны и спорные участки.',
+    title: 'Конструктор 2.5D/FPV',
+    description:
+      'Переходите в интерактивный редактор: сносите стены, ставьте перегородки, расставляйте мебель.',
   },
   {
-    title: 'Выберите сценарий перепланировки',
-    description: 'Сравните готовые варианты в 3D и делитесь ссылкой с семьёй.',
+    title: 'Автопроверки норм',
+    description:
+      'Каждое действие сверяется с СНиП, Жилищным кодексом и правилами ЖК в реальном времени.',
+  },
+  {
+    title: 'AI генерирует варианты',
+    description:
+      'Получайте 3–5 сценариев зонирования с учётом целей, бюджета и ограничений.',
+  },
+  {
+    title: 'Передаём в БТИ',
+    description:
+      'Отправьте заявку, и эксперты БТИ оформят проект и согласуют перепланировку.',
+  },
+];
+
+const builderTools = [
+  {
+    title: 'Снос/перенос стен',
+    description:
+      'Выделяйте несущие и ненесущие стены, пробуйте безопасные проёмы и усиления.',
+  },
+  {
+    title: 'Перегородки и зонирование',
+    description: 'Добавляйте лёгкие перегородки, объединяйте и делите комнаты.',
+  },
+  {
+    title: 'Базовая мебель',
+    description:
+      'Расставляйте коробочные блоки кухни, диванов, кроватей, чтобы оценить эргономику.',
+  },
+  {
+    title: 'История изменений',
+    description:
+      'Сохраняйте версии, сравнивайте сценарии и делитесь ссылкой с семьёй и дизайнером.',
+  },
+];
+
+const builderModes = [
+  {
+    title: '2.5D план сверху',
+    description:
+      'Точный масштаб, сетка и привязки — удобно для быстрого редактирования.',
+  },
+  {
+    title: 'Режим от первого лица',
+    description:
+      'Погуляйте по будущей квартире; сцену рендерит Unity-скрипт коллеги.',
   },
 ];
 
@@ -214,6 +366,27 @@ const checks = [
       'Контролируем эвакуационные пути и соблюдение минимальных проходов.',
     status: 'info',
     statusLabel: 'Info',
+  },
+];
+
+const aiVariants = [
+  {
+    title: 'Светлая гостиная',
+    focus: 'Семья + свет',
+    description: 'Кухня-гостиная с панорамным освещением и нишей под хранение.',
+    points: ['Снос двух перегородок', 'Усиление проёма 1,2 м', 'AR-просмотр'],
+  },
+  {
+    title: 'Спокойная двушка',
+    focus: 'Пара + кабинет',
+    description: 'Отдельный кабинет и кладовая без переноса мокрых зон.',
+    points: ['Лёгкие перегородки', 'Мебель вдоль несущей', 'Вариант бюджета'],
+  },
+  {
+    title: 'Смарт-перепланировка',
+    focus: 'Инвестиция',
+    description: 'Разделение на две студии с общим техблоком.',
+    points: ['Контроль нагрузок', 'Звукоизоляция', 'Готовая подача в БТИ'],
   },
 ];
 
@@ -265,6 +438,32 @@ const testimonials = [
     author: 'Zebra Development',
     type: 'девелопер',
     quote: 'Инструмент помог быстро согласовать перепланировки в шоу-руме.',
+  },
+];
+
+const expertChannels = [
+  'Выезд инженера БТИ в течение 3 дней',
+  'Подготовка рабочего проекта и смет',
+  'Передача пакета документов в МФЦ',
+];
+
+const btiBenefits = [
+  {
+    title: 'Лидогенерация',
+    description: 'Клиент обращается ещё до начала ремонта и готов оформить услуги.',
+  },
+  {
+    title: 'Новый доход',
+    description: 'Базовая проверка бесплатна, расширенный функционал — по подписке.',
+  },
+  {
+    title: 'Авторитет экспертов',
+    description:
+      'БТИ закрепляется как центр компетенций по ремонту и перепланировке.',
+  },
+  {
+    title: 'Подготовленные заявки',
+    description: 'Вся документация и расчёты уже структурированы и готовы к подаче.',
   },
 ];
 
@@ -386,6 +585,12 @@ section {
   margin-bottom: 24px;
 }
 
+.flow__subtitle {
+  margin-top: -8px;
+  margin-bottom: 28px;
+  color: #98a2c3;
+}
+
 .flow__steps {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -449,6 +654,34 @@ section {
   background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
     linear-gradient(0deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+.builder__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 18px;
+  margin-top: 28px;
+}
+
+.builder-card {
+  padding: 20px;
+  border-radius: 18px;
+  background: #171b2b;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.builder__modes {
+  margin-top: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+.mode-card {
+  padding: 20px;
+  border-radius: 18px;
+  background: rgba(47, 93, 255, 0.1);
+  border: 1px solid rgba(47, 93, 255, 0.25);
 }
 
 .checks__list {
@@ -537,6 +770,39 @@ section {
   color: #9cb4ff;
 }
 
+.ai {
+  margin-top: 72px;
+}
+
+.ai__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 24px;
+}
+
+.ai-card {
+  padding: 20px;
+  border-radius: 18px;
+  background: #151826;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ai-card__badge {
+  display: inline-flex;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.ai-card ul {
+  padding-left: 18px;
+  margin: 12px 0 0;
+  color: #c6cad4;
+}
+
 .demo {
   margin-top: 80px;
   padding: 40px;
@@ -576,6 +842,64 @@ section {
   margin-top: 12px;
   color: #9aa5c1;
   font-size: 14px;
+}
+
+.experts {
+  margin-top: 72px;
+  padding: 40px;
+  border-radius: 24px;
+  background: #111423;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 32px;
+}
+
+.experts ul {
+  padding-left: 18px;
+  color: #c6cad4;
+}
+
+.experts__form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.experts__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: #dfe2ea;
+}
+
+.experts__form input,
+.experts__form textarea {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fff;
+  padding: 10px;
+  font-family: inherit;
+}
+
+.experts__form textarea {
+  min-height: 96px;
+  resize: none;
+}
+
+.bti__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.bti-card {
+  padding: 20px;
+  border-radius: 18px;
+  background: #121523;
+  border: 1px solid rgba(255, 255, 255, 0.04);
 }
 
 .faq__list {
