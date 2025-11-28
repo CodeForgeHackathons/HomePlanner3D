@@ -256,13 +256,13 @@ export function parseMetadataFromOCRText(text) {
   }
   
   // Преобразуем в массив и фильтруем нереалистичные номера
-  // Номера комнат обычно в диапазоне 1-30 для квартир
+  // Номера комнат обычно в диапазоне 1-99 для квартир (включая коммунальные)
   metadata.rooms = Array.from(foundRooms.entries())
     .filter(([number, area]) => {
       const num = parseInt(number);
-      // Фильтруем номера > 30 (это могут быть размеры или другие числа)
+      // Фильтруем номера > 99 (это могут быть размеры или другие числа)
       // И проверяем, что площадь разумная
-      return num >= 1 && num <= 30 && area > 0.5 && area < 100;
+      return num >= 1 && num <= 99 && area > 0.5 && area < 100;
     })
     .map(([number, area]) => ({
       number: number,

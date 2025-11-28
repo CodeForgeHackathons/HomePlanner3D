@@ -409,10 +409,8 @@ export async function recognizePlanML(file) {
     
     // Проверяем, что модели загружены
     if (!areMLModelsLoaded()) {
-      return {
-        success: false,
-        error: 'ML модели не загружены. TensorFlow Hub недоступен из-за CORS. Разместите модели локально в public/models/ или используйте прокси-сервер.'
-      };
+      console.log('ML модели недоступны, используем алгоритмическое распознавание...');
+      return await recognizePlanAlgorithmic(file, image, metadata);
     }
     
     console.log('Используем нейросети (ML) для распознавания плана...');
@@ -430,34 +428,42 @@ export async function recognizePlanML(file) {
     
     // Проверяем, что ML модели дали результат
     if (!walls || walls.length === 0) {
-      throw new Error('Нейросеть не смогла обнаружить стены на плане. Проверьте качество изображения.');
+      console.warn('ML не смогла обнаружить стены, используем алгоритмическое распознавание...');
+      return await recognizePlanAlgorithmic(file, image, metadata);
     }
     
     if (!rooms || rooms.length === 0) {
-      throw new Error('Нейросеть не смогла обнаружить комнаты на плане. Проверьте качество изображения.');
+      console.warn('ML не смогла обнаружить комнаты, используем алгоритмическое распознавание...');
+      return await recognizePlanAlgorithmic(file, image, metadata);
     }
     
     // Форматируем результат ML
     const { formatWalls, formatRooms } = await import('./imageProcessor.js');
-    const scale = mlMetadata?.scale || metadata.scale || estimateScale(walls, metadata.area);
+    const { matchRoomsWithGeometry } = await getOcrProcessor();
+    const scale = mlMetadata?.scale || metadata.scale || estimateScale(walls, metadata.area, metadata.scale);
     
-    const roomsText = formatRooms(rooms, scale);
+    // Сопоставляем OCR номера комнат с геометрией
+    const matchedRooms = metadata.rooms && metadata.rooms.length > 0
+      ? matchRoomsWithGeometry(metadata.rooms, rooms)
+      : rooms;
+    
+    const roomsText = formatRooms(matchedRooms, scale);
     const wallsText = formatWalls(walls, scale);
     
     // Определяем тип квартиры
-    const livingRoomsCount = rooms.filter(r => r.isLivingRoom !== false && r.area >= 8).length;
-    const apartmentType = determineApartmentType(livingRoomsCount);
+    const livingRoomsCount = matchedRooms.filter(r => r.isLivingRoom !== false && r.area >= 8).length;
+    const apartmentType = determineApartmentType(livingRoomsCount, metadata.rooms || []);
     
     return {
       success: true,
       rooms: roomsText,
       walls: wallsText,
-      area: mlMetadata?.area || metadata.area || calculateTotalArea(rooms),
+      area: mlMetadata?.area || metadata.area || calculateTotalArea(matchedRooms),
       ceilingHeight: mlMetadata?.ceilingHeight || metadata.ceilingHeight,
       address: mlMetadata?.address || metadata.address,
       apartmentType: apartmentType,
       stats: {
-        roomsFound: rooms.length,
+        roomsFound: matchedRooms.length,
         livingRoomsFound: livingRoomsCount,
         wallsFound: walls.length,
         method: 'ml-neural-network'
@@ -466,9 +472,100 @@ export async function recognizePlanML(file) {
     
   } catch (error) {
     console.error('Ошибка ML распознавания:', error);
+    
+    // Fallback на алгоритмическое распознавание
+    if (image) {
+      console.log('Пробуем алгоритмическое распознавание как fallback...');
+      try {
+        return await recognizePlanAlgorithmic(file, image, metadata);
+      } catch (fallbackError) {
+        console.error('Ошибка алгоритмического распознавания:', fallbackError);
+      }
+    }
+    
     return {
       success: false,
       error: error.message || 'Неизвестная ошибка при распознавании плана'
+    };
+  }
+}
+
+/**
+ * Алгоритмическое распознавание плана (без ML)
+ */
+async function recognizePlanAlgorithmic(file, image, metadata) {
+  try {
+    console.log('Используем алгоритмическое распознавание...');
+    
+    const imageProcessor = await import('./imageProcessor.js');
+    const ocrModule = await getOcrProcessor();
+    
+    // Преобразуем изображение в canvas
+    const { canvas, width, height, ctx } = imageProcessor.imageToCanvas(image);
+    
+    // Обработка изображения: grayscale -> threshold -> edges -> lines -> walls -> rooms
+    imageProcessor.grayscale(canvas, ctx);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    imageProcessor.threshold(imageData, 128);
+    ctx.putImageData(imageData, 0, 0);
+    
+    // Обнаружение краёв
+    const edges = imageProcessor.detectEdges(canvas, ctx);
+    ctx.putImageData(edges, 0, 0);
+    
+    // Обнаружение линий (стен)
+    const lines = imageProcessor.detectLines(edges, canvas.width, canvas.height);
+    
+    // Группировка линий в стены
+    const walls = imageProcessor.groupLinesIntoWalls(lines);
+    
+    // Удаление конфликтов стен
+    const cleanWalls = imageProcessor.removeWallConflicts(walls);
+    
+    // Определение масштаба
+    const scale = metadata.scale || estimateScale(cleanWalls, metadata.area, metadata.scale);
+    
+    // Обнаружение комнат
+    const rooms = imageProcessor.detectRooms(cleanWalls, canvas.width, canvas.height, scale);
+    
+    if (!rooms || rooms.length === 0) {
+      throw new Error('Не удалось обнаружить комнаты на плане. Проверьте качество изображения.');
+    }
+    
+    // Сопоставляем OCR номера комнат с геометрией
+    const matchedRooms = metadata.rooms && metadata.rooms.length > 0
+      ? ocrModule.matchRoomsWithGeometry(metadata.rooms, rooms)
+      : rooms;
+    
+    // Форматируем результат
+    const { formatWalls, formatRooms } = imageProcessor;
+    const roomsText = formatRooms(matchedRooms, scale);
+    const wallsText = formatWalls(cleanWalls, scale);
+    
+    // Определяем тип квартиры
+    const livingRoomsCount = matchedRooms.filter(r => r.isLivingRoom !== false && r.area >= 8).length;
+    const apartmentType = determineApartmentType(livingRoomsCount, metadata.rooms || []);
+    
+    return {
+      success: true,
+      rooms: roomsText,
+      walls: wallsText,
+      area: metadata.area || calculateTotalArea(matchedRooms),
+      ceilingHeight: metadata.ceilingHeight,
+      address: metadata.address,
+      apartmentType: apartmentType,
+      stats: {
+        roomsFound: matchedRooms.length,
+        livingRoomsFound: livingRoomsCount,
+        wallsFound: cleanWalls.length,
+        method: 'algorithmic'
+      }
+    };
+  } catch (error) {
+    console.error('Ошибка алгоритмического распознавания:', error);
+    return {
+      success: false,
+      error: error.message || 'Неизвестная ошибка при алгоритмическом распознавании плана'
     };
   }
 }
@@ -484,10 +581,15 @@ export function areMLModelsLoaded() {
 /**
  * Вспомогательные функции
  */
-function estimateScale(walls, knownArea) {
+function estimateScale(walls, knownArea, ocrScale) {
+  // Приоритет: масштаб из OCR
+  if (ocrScale) return ocrScale;
+  
   if (!walls || walls.length === 0) return 0.005;
+  
   // Упрощенная оценка масштаба
-  return 0.005; // По умолчанию 1:200
+  // По умолчанию 1:200 (0.005)
+  return 0.005;
 }
 
 function calculateTotalArea(rooms) {
@@ -498,7 +600,24 @@ function calculateTotalArea(rooms) {
     .toFixed(1);
 }
 
-function determineApartmentType(livingRoomsCount) {
+function determineApartmentType(livingRoomsCount, ocrRooms = []) {
+  // Анализируем номера комнат из OCR для определения типа квартиры
+  const roomNumbers = ocrRooms
+    .map(r => parseInt(r.number))
+    .filter(n => !isNaN(n) && n > 0);
+  
+  // Если есть номера > 10 и они не последовательные - коммунальная квартира
+  const hasHighNumbers = roomNumbers.some(n => n > 10);
+  const isSequential = roomNumbers.length > 0 && 
+    roomNumbers.length > 1 &&
+    Math.max(...roomNumbers) - Math.min(...roomNumbers) === roomNumbers.length - 1;
+  
+  if (hasHighNumbers && !isSequential && roomNumbers.length > 0) {
+    // Коммунальная квартира или общежитие
+    return 'Комната в коммунальной квартире';
+  }
+  
+  // Обычная логика для стандартных квартир
   if (livingRoomsCount === 0) return 'Студия';
   if (livingRoomsCount === 1) return '1-комнатная';
   if (livingRoomsCount === 2) return '2-комнатная';

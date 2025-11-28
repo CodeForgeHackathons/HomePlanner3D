@@ -1133,8 +1133,10 @@ export function formatRooms(rooms, scale = 0.01) {
         return `${x},${y}`;
       }).join(';');
       
-      // Используем оригинальное имя комнаты
-      const roomName = room.name || `Помещение ${rooms.indexOf(room) + 1}`;
+      // Приоритет: номер из OCR > имя комнаты > дефолтное имя
+      const roomName = room.number 
+        ? `Комната ${room.number}` 
+        : (room.name || `Помещение ${rooms.indexOf(room) + 1}`);
       return `${roomName}:${coords}`;
     })
     .join('\n');
