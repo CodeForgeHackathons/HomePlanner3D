@@ -12,27 +12,24 @@ const GRAPHQL_ENDPOINT = import.meta.env.VITE_GRAPHQL_ENDPOINT || '/graphql';
 
 /**
  * Выполняет GraphQL запрос
- * Сервер принимает запрос как строку
+ * Сервер принимает запрос как строку (string)
  * @param {string} query - GraphQL запрос или mutation
  * @param {object} variables - Переменные для запроса
  * @returns {Promise<object>} Результат запроса
  */
 export async function graphqlRequest(query, variables = {}) {
   try {
-    // Отправляем стандартный GraphQL формат как строку JSON
-    // Сервер получает: "{ \"query\": \"mutation...\", \"variables\": {...} }"
-    const requestBody = JSON.stringify({
-      query,
-      variables,
-    });
+    // Формируем запрос как строку с подставленными переменными
+    const queryString = buildQueryString(query, variables);
     
+    // Отправляем запрос как строку (не JSON объект)
     const response = await fetch(GRAPHQL_ENDPOINT, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
       },
-      body: requestBody, // Отправляем GraphQL запрос как строку JSON
+      body: JSON.stringify(queryString), // Отправляем строку запроса
     });
 
     if (!response.ok) {
@@ -51,6 +48,87 @@ export async function graphqlRequest(query, variables = {}) {
     console.error('Ошибка GraphQL запроса:', error);
     throw error;
   }
+}
+
+/**
+ * Строит GraphQL запрос как строку с подставленными переменными
+ * @param {string} query - GraphQL запрос с переменными
+ * @param {object} variables - Значения переменных
+ * @returns {string} Готовый GraphQL запрос как строка
+ */
+function buildQueryString(query, variables) {
+  if (!variables || Object.keys(variables).length === 0) {
+    return query;
+  }
+
+  // Подставляем переменные в запрос
+  // Заменяем $input: PlanningProjectInput! на значение переменной
+  let queryString = query;
+  
+  if (variables.input) {
+    // Преобразуем объект input в GraphQL формат
+    const inputValue = formatGraphQLInput(variables.input);
+    
+    // Заменяем объявление переменной на значение
+    queryString = queryString.replace(
+      /\$input: PlanningProjectInput!/g,
+      inputValue
+    );
+    
+    // Заменяем использование переменной в вызове mutation
+    queryString = queryString.replace(
+      /input: \$input/g,
+      `input: ${inputValue}`
+    );
+  }
+
+  return queryString;
+}
+
+/**
+ * Форматирует объект input в GraphQL формат
+ * @param {object} input - Объект с данными
+ * @returns {string} GraphQL форматированная строка
+ */
+function formatGraphQLInput(input) {
+  const formatValue = (value) => {
+    if (value === null || value === undefined) {
+      return 'null';
+    }
+    
+    if (typeof value === 'string') {
+      // Экранируем специальные символы
+      const escaped = value
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\r/g, '\\r');
+      return `"${escaped}"`;
+    }
+    
+    if (typeof value === 'number' || typeof value === 'boolean') {
+      return String(value);
+    }
+    
+    if (Array.isArray(value)) {
+      const items = value.map(item => formatValue(item)).join(', ');
+      return `[${items}]`;
+    }
+    
+    if (typeof value === 'object') {
+      const fields = Object.entries(value)
+        .filter(([_, val]) => val !== null && val !== undefined)
+        .map(([key, val]) => {
+          return `${key}: ${formatValue(val)}`;
+        })
+        .join(', ');
+      return `{${fields}}`;
+    }
+    
+    return JSON.stringify(value);
+  };
+
+  return formatValue(input);
 }
 
 /**
