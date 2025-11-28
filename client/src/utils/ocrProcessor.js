@@ -255,11 +255,20 @@ export function parseMetadataFromOCRText(text) {
     }
   }
   
-  // Преобразуем в массив
-  metadata.rooms = Array.from(foundRooms.entries()).map(([number, area]) => ({
-    number: number,
-    area: area
-  }));
+  // Преобразуем в массив и фильтруем нереалистичные номера
+  // Номера комнат обычно в диапазоне 1-30 для квартир
+  metadata.rooms = Array.from(foundRooms.entries())
+    .filter(([number, area]) => {
+      const num = parseInt(number);
+      // Фильтруем номера > 30 (это могут быть размеры или другие числа)
+      // И проверяем, что площадь разумная
+      return num >= 1 && num <= 30 && area > 0.5 && area < 100;
+    })
+    .map(([number, area]) => ({
+      number: number,
+      area: area
+    }))
+    .sort((a, b) => parseInt(a.number) - parseInt(b.number)); // Сортируем по номеру
   
   // Вычисляем общую площадь
   if (metadata.rooms.length > 0) {

@@ -876,17 +876,24 @@ export function formatWalls(walls, scale = 0.01) {
  * Форматирует комнаты для вывода в текстовый формат
  */
 export function formatRooms(rooms, scale = 0.01) {
-  return rooms.map(room => {
-    const coords = room.vertices.map(v => {
-      const x = pixelsToMeters(v.x, scale).toFixed(2);
-      const y = pixelsToMeters(v.y, scale).toFixed(2);
-      return `${x},${y}`;
-    }).join(';');
-    
-    // Используем оригинальное имя комнаты
-    const roomName = room.name || `Помещение ${rooms.indexOf(room) + 1}`;
-    return `${roomName}:${coords}`;
-  }).join('\n');
+  if (!rooms || rooms.length === 0) {
+    return '';
+  }
+  
+  return rooms
+    .filter(room => room && room.vertices && room.vertices.length > 0)
+    .map(room => {
+      const coords = room.vertices.map(v => {
+        const x = pixelsToMeters(v.x, scale).toFixed(2);
+        const y = pixelsToMeters(v.y, scale).toFixed(2);
+        return `${x},${y}`;
+      }).join(';');
+      
+      // Используем оригинальное имя комнаты
+      const roomName = room.name || `Помещение ${rooms.indexOf(room) + 1}`;
+      return `${roomName}:${coords}`;
+    })
+    .join('\n');
 }
 
 /**

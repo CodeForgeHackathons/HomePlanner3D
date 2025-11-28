@@ -149,60 +149,148 @@ export async function recognizePlan(file) {
     // Обнаруживаем комнаты (с учётом масштаба для фильтрации)
     console.log('Обнаружение комнат...');
     let rooms = detectRooms(walls, width, height, scale);
-    console.log(`Найдено комнат: ${rooms.length}`);
+    console.log(`Найдено геометрических комнат: ${rooms.length}`);
     
     // Если есть комнаты из OCR, сопоставляем их с геометрическими
-    if (metadata.rooms && metadata.rooms.length > 0 && rooms.length > 0) {
+    if (metadata.rooms && metadata.rooms.length > 0) {
       try {
         const ocrModule = await getOcrProcessor();
-        const matchedRooms = ocrModule.matchRoomsWithGeometry(metadata.rooms, rooms);
-        console.log('Сопоставленные комнаты:', matchedRooms);
         
-        // Обновляем комнаты с номерами из OCR
-        rooms = matchedRooms.map(matched => {
-          if (matched.matched && matched.number) {
-            // Используем номер и площадь из OCR, сохраняем isLivingRoom
+        if (rooms.length > 0) {
+          // Сопоставляем OCR комнаты с геометрическими
+          const matchedRooms = ocrModule.matchRoomsWithGeometry(metadata.rooms, rooms);
+          console.log('Сопоставленные комнаты:', matchedRooms);
+          
+          // Обновляем комнаты с номерами из OCR
+          rooms = matchedRooms.map(matched => {
+            if (matched.matched && matched.number) {
+              // Используем номер и площадь из OCR, сохраняем isLivingRoom
+              return {
+                ...matched,
+                name: `Комната ${matched.number}`,
+                area: matched.ocrArea || matched.area,
+                // Сохраняем isLivingRoom из геометрической комнаты
+                isLivingRoom: matched.isLivingRoom !== false
+              };
+            } else {
+              // Оставляем геометрическую комнату без номера, сохраняем isLivingRoom
+              return {
+                ...matched,
+                isLivingRoom: matched.isLivingRoom !== false
+              };
+            }
+          });
+        } else {
+          // Если геометрические комнаты не найдены, создаём комнаты из OCR
+          console.warn('Геометрические комнаты не найдены, создаём комнаты из OCR');
+          
+          // Пытаемся использовать границы стен для более точного размещения
+          const minX = Math.min(...walls.map(w => Math.min(w.start.x, w.end.x)));
+          const maxX = Math.max(...walls.map(w => Math.max(w.start.x, w.end.x)));
+          const minY = Math.min(...walls.map(w => Math.min(w.start.y, w.end.y)));
+          const maxY = Math.max(...walls.map(w => Math.max(w.start.y, w.end.y)));
+          
+          const apartmentWidth = maxX - minX;
+          const apartmentHeight = maxY - minY;
+          const apartmentCenterX = (minX + maxX) / 2;
+          const apartmentCenterY = (minY + maxY) / 2;
+          
+          // Сортируем комнаты по площади (от больших к маленьким) для лучшего размещения
+          const sortedOcrRooms = [...metadata.rooms].sort((a, b) => b.area - a.area);
+          
+          // Располагаем комнаты в сетке
+          const cols = Math.ceil(Math.sqrt(sortedOcrRooms.length));
+          const rows = Math.ceil(sortedOcrRooms.length / cols);
+          const cellWidth = apartmentWidth / cols;
+          const cellHeight = apartmentHeight / rows;
+          
+          rooms = sortedOcrRooms.map((ocrRoom, index) => {
+            // Вычисляем размер комнаты на основе площади
+            // Сначала находим размер стороны в метрах, затем переводим в пиксели
+            const sideInMeters = Math.sqrt(ocrRoom.area); // Размер стороны в метрах
+            const sideInPixels = sideInMeters / scale; // Размер стороны в пикселях
+            
+            // Позиция в сетке
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            
+            // Центр ячейки
+            const cellX = minX + (col + 0.5) * cellWidth;
+            const cellY = minY + (row + 0.5) * cellHeight;
+            
+            // Ограничиваем размер комнаты размером ячейки
+            const maxSize = Math.min(cellWidth * 0.8, cellHeight * 0.8);
+            const actualSize = Math.min(sideInPixels, maxSize);
+            const halfSize = actualSize / 2;
+            
             return {
-              ...matched,
-              name: `Комната ${matched.number}`,
-              area: matched.ocrArea || matched.area,
-              // Сохраняем isLivingRoom из геометрической комнаты
-              isLivingRoom: matched.isLivingRoom !== false
+              name: `Комната ${ocrRoom.number}`,
+              vertices: [
+                { x: cellX - halfSize, y: cellY - halfSize },
+                { x: cellX + halfSize, y: cellY - halfSize },
+                { x: cellX + halfSize, y: cellY + halfSize },
+                { x: cellX - halfSize, y: cellY + halfSize }
+              ],
+              area: ocrRoom.area,
+              isLivingRoom: ocrRoom.area >= 5, // Комнаты >= 5 м² считаем жилыми
+              number: ocrRoom.number,
+              matched: false,
+              width: actualSize,
+              height: actualSize
             };
-          } else {
-            // Оставляем геометрическую комнату без номера, сохраняем isLivingRoom
-            return {
-              ...matched,
-              isLivingRoom: matched.isLivingRoom !== false
-            };
-          }
-        });
+          });
+          console.log(`Создано ${rooms.length} комнат из OCR с использованием границ стен`);
+        }
       } catch (error) {
         console.warn('Не удалось сопоставить комнаты:', error);
       }
     }
     
     // Определяем тип квартиры по количеству жилых комнат
-    // Приоритет: комнаты из OCR (они точно указаны на плане), затем геометрические
+    // ПРИОРИТЕТ: используем комнаты из OCR (они точнее), затем геометрические
     let livingRoomsCount = 0;
     
-    // Если есть комнаты из OCR, используем их количество (они обычно все жилые, кроме санузлов)
     if (metadata.rooms && metadata.rooms.length > 0) {
-      // Фильтруем санузлы по площади (< 6 м² обычно санузлы)
-      const ocrLivingRooms = metadata.rooms.filter(r => r.area >= 6);
+      // Используем комнаты из OCR
+      const ocrLivingRooms = metadata.rooms.filter(r => {
+        // Исключаем лестницы
+        if (r.number === '1-2' || (r.number && r.number.includes('-'))) return false;
+        // Исключаем очень маленькие помещения (< 1.5 м²) - кладовые
+        if (r.area < 1.5) return false;
+        // Исключаем санузлы (< 3 м²)
+        if (r.area < 3 && (r.number === '17' || r.number === '18')) return false;
+        // Жилые комнаты >= 5 м²
+        return r.area >= 5;
+      });
       livingRoomsCount = ocrLivingRooms.length;
-      console.log(`Найдено жилых комнат из OCR: ${livingRoomsCount} (всего комнат: ${metadata.rooms.length})`);
+      console.log(`Найдено жилых комнат из OCR: ${livingRoomsCount} (всего OCR комнат: ${metadata.rooms.length})`);
+      console.log('OCR жилые комнаты:', ocrLivingRooms.map(r => ({ number: r.number, area: r.area })));
     } else {
       // Если нет OCR, используем геометрические комнаты
-      const livingRooms = rooms.filter(r => r.isLivingRoom !== false);
+      const livingRooms = rooms.filter(r => {
+        // Исключаем очень маленькие помещения (< 1.5 м²) и лестницы
+        if (r.area < 1.5) return false;
+        if (r.name && r.name.includes('1-2')) return false;
+        if (r.number && (r.number === '1-2' || r.number.includes('-'))) return false;
+        // Жилые комнаты >= 5 м²
+        return r.area >= 5;
+      });
       livingRoomsCount = livingRooms.length;
-      console.log(`Найдено жилых комнат из геометрии: ${livingRoomsCount}`);
+      console.log(`Найдено жилых комнат из геометрии: ${livingRoomsCount} (всего комнат: ${rooms.length})`);
+      console.log('Геометрические жилые комнаты:', livingRooms.map(r => ({ name: r.name, number: r.number, area: r.area })));
     }
     
-    // Если всё ещё нет жилых комнат, но есть геометрические комнаты, считаем их жилыми
+    // Если всё ещё нет жилых комнат, но есть комнаты, считаем все >= 3 м² жилыми
     if (livingRoomsCount === 0 && rooms.length > 0) {
-      console.warn('Не найдено жилых комнат, считаем все найденные комнаты жилыми');
-      livingRoomsCount = rooms.length;
+      const allRooms = metadata.rooms || rooms;
+      const fallbackLivingRooms = allRooms.filter(r => {
+        const roomArea = r.area || 0;
+        if (roomArea < 3) return false;
+        if (r.number === '1-2' || (r.number && r.number.includes('-'))) return false;
+        return true;
+      });
+      livingRoomsCount = fallbackLivingRooms.length;
+      console.warn(`Не найдено жилых комнат >= 5 м², используем комнаты >= 3 м²: ${livingRoomsCount}`);
     }
     
     const apartmentType = determineApartmentTypeByCount(livingRoomsCount);
@@ -212,12 +300,54 @@ export async function recognizePlan(file) {
     const roomsText = formatRooms(rooms, scale);
     const wallsText = formatWalls(walls, scale);
     
-    // Вычисляем общую площадь, если не указана
-    let area = metadata.area;
-    if (!area && rooms.length > 0) {
-      area = rooms.reduce((sum, room) => {
-        return sum + calculateRoomArea(room.vertices, scale);
-      }, 0).toFixed(1);
+    // Вычисляем общую площадь квартиры
+    // ПРИОРИТЕТ: используем площадь из OCR (она точнее), если доступна
+    let area = null;
+    
+    if (metadata.rooms && metadata.rooms.length > 0) {
+      // Суммируем площади комнат из OCR, исключая лестницы, санузлы и кладовые
+      const totalArea = metadata.rooms
+        .filter(r => {
+          // Исключаем лестницы
+          if (r.number === '1-2' || (r.number && r.number.includes('-'))) return false;
+          // Исключаем очень маленькие помещения (< 1.5 м²) - кладовые
+          if (r.area < 1.5) return false;
+          // Исключаем санузлы (обычно < 3 м²)
+          if (r.area < 3 && (r.number === '17' || r.number === '18')) return false;
+          return true;
+        })
+        .reduce((sum, room) => sum + room.area, 0);
+      
+      area = totalArea.toFixed(1);
+      console.log(`Площадь из OCR комнат: ${area} м²`);
+    } else if (rooms.length > 0) {
+      // Если нет OCR, вычисляем из геометрических комнат
+      const totalArea = rooms
+        .filter(r => {
+          // Исключаем лестницы
+          if (r.name && r.name.includes('1-2')) return false;
+          if (r.number && (r.number === '1-2' || r.number.includes('-'))) return false;
+          // Исключаем очень маленькие помещения (< 1.5 м²) - кладовые
+          if (r.area < 1.5) return false;
+          // Исключаем санузлы
+          if (r.area < 3 && (r.number === '17' || r.number === '18')) return false;
+          return true;
+        })
+        .reduce((sum, room) => {
+          return sum + (room.area || calculateRoomArea(room.vertices, scale));
+        }, 0);
+      area = totalArea.toFixed(1);
+      console.log(`Вычисленная площадь из геометрии: ${area} м²`);
+    }
+    
+    // Если есть общая площадь из OCR метаданных, используем её (она может быть точнее)
+    if (metadata.area && metadata.area !== '0' && metadata.area !== '0.0') {
+      const ocrTotalArea = parseFloat(metadata.area);
+      // Если общая площадь из OCR разумная (30-200 м²), используем её
+      if (ocrTotalArea >= 30 && ocrTotalArea <= 200) {
+        area = metadata.area;
+        console.log(`Используется общая площадь из OCR метаданных: ${area} м²`);
+      }
     }
     
     // Подсчитываем жилые комнаты для статистики
