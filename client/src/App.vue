@@ -29,6 +29,124 @@
       </div>
     </header>
 
+    <section class="intake">
+      <div class="section-header">
+        <h2>Шаг 1. Расскажите о квартире</h2>
+        <p>
+          Это видит обычный пользователь: мы просим заполнить простые поля, а уже
+          потом превращаем их в понятный Unity-скрипту JSON и отправляем через API.
+        </p>
+        <ul class="intake__hints">
+          <li>Загрузите техпаспорт, DWG/DXF или фото плана.</li>
+          <li>Укажите высоты, несущие стены и мокрые зоны.</li>
+          <li>Опишите ограничения: СНиПы, требования ЖК, пожелания.</li>
+        </ul>
+      </div>
+      <form class="intake__form" @submit.prevent="handleSubmit">
+        <label>
+          План квартиры (PDF, DWG, DXF, IFC, JPG, PNG)
+          <input
+            type="file"
+            accept=".pdf,.dwg,.dxf,.ifc,.jpg,.jpeg,.png"
+            @change="handleFileChange"
+          />
+          <small v-if="uploadedFileMeta">
+            {{ uploadedFileMeta.name }} · {{ uploadedFileMeta.size }} · {{ uploadedFileMeta.type }}
+          </small>
+          <small v-else>Загрузите файл, чтобы мы распознали план автоматически.</small>
+          <small v-if="fileError" class="intake__error">{{ fileError }}</small>
+        </label>
+        <label>
+          Откуда документ?
+          <select v-model="formData.planType">
+            <option v-for="source in planSources" :key="source" :value="source">
+              {{ source }}
+            </option>
+          </select>
+          <small>Например, «PDF из БТИ» или «Фото эскиза».</small>
+        </label>
+        <label>
+          Тип квартиры
+          <select v-model="formData.layoutType">
+            <option v-for="type in layoutTypes" :key="type" :value="type">
+              {{ type }}
+            </option>
+          </select>
+          <small>Нужно для рекомендаций и AI-вариантов.</small>
+        </label>
+        <label>
+          Высота потолков, м
+          <input v-model="formData.ceilingHeight" type="number" step="0.1" />
+          <small>Помогает правильно построить 3D-сцену.</small>
+        </label>
+        <label>
+          Перепад пола, см
+          <input v-model="formData.floorDelta" type="number" step="0.5" />
+          <small>Если уровни одинаковые, оставьте 0.</small>
+        </label>
+        <label class="intake__wide">
+          Контуры комнат
+          <textarea
+            v-model="formData.roomsText"
+            rows="4"
+            placeholder="Гостиная:0,0;5.2,0;5.2,4.1;0,4.1"
+          ></textarea>
+          <small>Укажите название комнаты и точки по плану. Можно скопировать из распознанного файла.</small>
+        </label>
+        <label class="intake__wide">
+          Стены и их тип
+          <textarea
+            v-model="formData.wallsText"
+            rows="4"
+            placeholder="0,0 -> 5.2,0; несущая; 0.2"
+          ></textarea>
+          <small>По одной стене в строке. Важны несущие и толщина.</small>
+        </label>
+        <label class="intake__wide">
+          Ограничения
+          <textarea
+            v-model="formData.constraintsText"
+            rows="3"
+            placeholder="нельзя переносить кухню над жилой&#10;сохранить вентшахту"
+          ></textarea>
+          <small>Все правила, которые нужно учитывать (СНиПы, требования ЖК).</small>
+        </label>
+        <label class="intake__wide">
+          Региональные нормы / документы
+          <input
+            v-model="formData.regionRules"
+            type="text"
+            placeholder="СНиП 31-02; ЖК РФ ст.25"
+          />
+          <small>Чтобы проверка ссылалась на конкретные документы.</small>
+        </label>
+        <label>
+          Кто будет жить?
+          <select v-model="formData.familyProfile">
+            <option v-for="profile in familyProfiles" :key="profile" :value="profile">
+              {{ profile }}
+            </option>
+          </select>
+          <small>Влияет на сценарии AI и расстановку мебели.</small>
+        </label>
+        <label>
+          Основная цель
+          <input
+            v-model="formData.goal"
+            type="text"
+            placeholder="Добавить кабинет, больше света, сдача в аренду"
+          />
+          <small>Мы используем это при генерации вариантов.</small>
+        </label>
+        <div class="intake__actions">
+          <button type="submit" class="btn btn--primary btn--small" :disabled="isSubmitting">
+            {{ isSubmitting ? 'Отправляем...' : 'Отправить в систему' }}
+          </button>
+        </div>
+        <p v-if="submitStatus" class="intake__status">{{ submitStatus }}</p>
+      </form>
+    </section>
+
     <section class="flow">
       <h2>Как это работает</h2>
       <p class="flow__subtitle">
@@ -277,6 +395,202 @@
 </template>
 
 <script setup>
+import { reactive, ref } from 'vue';
+
+const planSources = [
+  'PDF / техпаспорт',
+  'DWG / DXF',
+  'Фото / скан',
+  'IFC / BIM',
+];
+
+const layoutTypes = [
+  'Студия',
+  '1-комнатная',
+  '2-комнатная',
+  '3+ комнатная',
+  'Апартаменты',
+];
+
+const familyProfiles = [
+  'Пара',
+  'Семья с ребёнком',
+  'Семья с двумя детьми',
+  'Фрилансер/офис + жильё',
+  'Сдача в аренду',
+];
+
+const formData = reactive({
+  planType: planSources[0],
+  layoutType: layoutTypes[1],
+  familyProfile: familyProfiles[0],
+  goal: 'Больше света и рабочее место',
+  ceilingHeight: '2.7',
+  floorDelta: '0',
+  roomsText: 'Гостиная:0,0;5.2,0;5.2,4.1;0,4.1',
+  wallsText: '0,0 -> 5.2,0; несущая; 0.2',
+  constraintsText: 'нельзя переносить кухню над жилой\nсохранить вентшахту',
+  regionRules: 'СНиП 31-02; ЖК РФ ст.25',
+});
+
+const generatedJson = ref('');
+const isSubmitting = ref(false);
+const submitStatus = ref('');
+const uploadedFileMeta = ref(null);
+const uploadedFileContent = ref('');
+const fileError = ref('');
+
+const parseRooms = () =>
+  formData.roomsText
+    .split('\n')
+    .map((line, index) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const [name, coords] = line.split(':');
+      const vertices =
+        coords
+          ?.split(';')
+          .map((pair) => pair.trim().split(',').map((value) => Number(value.trim())))
+          .filter(
+            (point) => point.length === 2 && !point.some((value) => Number.isNaN(value))
+          )
+          .map(([x, y]) => ({ x, y })) ?? [];
+      return {
+        id: `R${index + 1}`,
+        name: name?.trim() || `Помещение ${index + 1}`,
+        height: Number(formData.ceilingHeight) || 2.7,
+        vertices,
+      };
+    });
+
+const parseWalls = () =>
+  formData.wallsText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line, index) => {
+      const [segment, type = 'ненесущая', thickness = '0.12'] = line.split(';');
+      const [startStr, endStr] = segment.split('->');
+      const [sx, sy] = startStr
+        .split(',')
+        .map((value) => Number(value.trim()))
+        .slice(0, 2);
+      const [ex, ey] = endStr
+        .split(',')
+        .map((value) => Number(value.trim()))
+        .slice(0, 2);
+      return {
+        id: `W${index + 1}`,
+        start: { x: sx, y: sy },
+        end: { x: ex, y: ey },
+        loadBearing: type.toLowerCase().includes('несущ'),
+        thickness: Number(thickness.trim()),
+      };
+    });
+
+const parseConstraints = () =>
+  formData.constraintsText
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+const handleGenerate = () => {
+  const payload = {
+    plan: {
+      source: formData.planType,
+      layoutType: formData.layoutType,
+      familyProfile: formData.familyProfile,
+      goal: formData.goal,
+      ceilingHeight: Number(formData.ceilingHeight) || null,
+      floorDelta: Number(formData.floorDelta) || 0,
+      file: uploadedFileMeta.value
+        ? {
+            name: uploadedFileMeta.value.name,
+            size: uploadedFileMeta.value.size,
+            type: uploadedFileMeta.value.type,
+            content: uploadedFileContent.value,
+          }
+        : null,
+    },
+    geometry: {
+      rooms: parseRooms(),
+    },
+    walls: parseWalls(),
+    constraints: {
+      forbiddenMoves: parseConstraints(),
+      regionRules: formData.regionRules,
+    },
+    timestamp: new Date().toISOString(),
+  };
+
+  generatedJson.value = JSON.stringify(payload, null, 2);
+};
+
+const fakeSendToApi = () =>
+  new Promise((resolve) => {
+    setTimeout(() => resolve({ ok: true }), 1200);
+  });
+
+const fileToBase64 = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+
+const handleFileChange = async (event) => {
+  fileError.value = '';
+  const file = event.target.files?.[0];
+  if (!file) {
+    uploadedFileMeta.value = null;
+    uploadedFileContent.value = '';
+    return;
+  }
+  const allowedTypes = [
+    'application/pdf',
+    'image/jpeg',
+    'image/png',
+    'image/jpg',
+    'application/acad',
+    'application/dwg',
+    'application/dxf',
+    'model/vnd.ifc',
+  ];
+  if (!allowedTypes.some((type) => file.type === type) && !file.name.match(/\.(dwg|dxf|ifc)$/i)) {
+    fileError.value = 'Недопустимый формат. Загрузите PDF, DWG, DXF, IFC, JPG или PNG.';
+    uploadedFileMeta.value = null;
+    uploadedFileContent.value = '';
+    return;
+  }
+  uploadedFileMeta.value = {
+    name: file.name,
+    size: `${(file.size / 1024).toFixed(1)} КБ`,
+    type: file.type || file.name.split('.').pop(),
+  };
+  uploadedFileContent.value = await fileToBase64(file);
+};
+
+const handleSubmit = async () => {
+  submitStatus.value = '';
+  handleGenerate();
+  if (!generatedJson.value) return;
+  isSubmitting.value = true;
+  try {
+    const response = await fakeSendToApi();
+    if (response.ok) {
+      submitStatus.value =
+        'Данные приняты. Команда 3D уже получает структурированный JSON.';
+    } else {
+      submitStatus.value = 'Не удалось отправить данные. Попробуйте ещё раз.';
+    }
+  } catch (error) {
+    submitStatus.value = 'Произошла ошибка при связи с API.';
+  } finally {
+    isSubmitting.value = false;
+  }
+};
+
 const steps = [
   {
     title: 'Распознаём план',
@@ -557,6 +871,95 @@ section {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.intake {
+  margin-top: 72px;
+  padding: 32px;
+  border-radius: 24px;
+  background: #111423;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.intake__hints {
+  color: #9aa5c1;
+  padding-left: 18px;
+}
+
+.intake__hints li {
+  margin-bottom: 4px;
+}
+
+.intake__form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+}
+
+.intake__form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 14px;
+  color: #dfe2ea;
+}
+
+.intake__form small {
+  color: #9aa5c1;
+}
+
+.intake__wide {
+  grid-column: 1 / -1;
+}
+
+.intake__form input,
+.intake__form select,
+.intake__form textarea {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  color: #fff;
+  padding: 10px;
+  font-family: inherit;
+}
+
+.intake__form input[type='file'] {
+  padding: 6px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.intake__actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.intake__status {
+  color: #9cb4ff;
+  margin-top: 12px;
+}
+
+.intake__error {
+  color: #ff9b9b;
+}
+
+.intake__result {
+  margin-top: 24px;
+  padding: 20px;
+  border-radius: 16px;
+  background: #0d101b;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: auto;
+}
+
+.intake__result pre {
+  max-height: 320px;
+  overflow: auto;
+  font-size: 13px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 16px;
+  border-radius: 12px;
 }
 
 .visual-card {
