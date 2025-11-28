@@ -367,50 +367,387 @@ function calculateLineDistance(line1, line2) {
  * Обнаруживает комнаты по замкнутым контурам
  * Упрощённый алгоритм - находит прямоугольные области
  */
-export function detectRooms(walls, width, height) {
-  const rooms = [];
+/**
+ * Обнаруживает комнаты по замкнутым контурам
+ * Улучшенный алгоритм: правильно находит отдельные комнаты, разделённые стенами
+ */
+export function detectRooms(walls, width, height, scale = 0.01) {
+  const allSpaces = [];
   const horizontalWalls = walls.filter(w => w.type === 'horizontal');
   const verticalWalls = walls.filter(w => w.type === 'vertical');
-  if (!horizontalWalls.length || !verticalWalls.length) return rooms;
+  if (!horizontalWalls.length || !verticalWalls.length) return [];
 
-  const groupedHorizontal = groupWallsByCoordinate(horizontalWalls, 'horizontal');
-  const minRoomWidth = Math.max(40, Math.floor(width * 0.06));
-  const minRoomHeight = Math.max(40, Math.floor(height * 0.06));
+  // Группируем стены по координатам для более точного поиска
+  const groupedHorizontal = groupWallsByCoordinate(horizontalWalls, 'horizontal', 5);
+  const groupedVertical = groupWallsByCoordinate(verticalWalls, 'vertical', 5);
+  
+  // Минимальные размеры комнаты (в пикселях)
+  const minRoomWidth = Math.max(80, Math.floor(width * 0.08));
+  const minRoomHeight = Math.max(80, Math.floor(height * 0.08));
+  const MAX_ROOM_AREA_PX = (width * height) * 0.25; // Максимум 25% от площади изображения
+  
   const roomKeys = new Set();
 
+  // Находим все пространства между стенами
   for (let i = 0; i < groupedHorizontal.length - 1; i++) {
-    const top = groupedHorizontal[i];
+    const topGroup = groupedHorizontal[i];
     for (let j = i + 1; j < groupedHorizontal.length; j++) {
-      const bottom = groupedHorizontal[j];
-      const heightPx = bottom.coord - top.coord;
+      const bottomGroup = groupedHorizontal[j];
+      const heightPx = bottomGroup.coord - topGroup.coord;
+      
       if (heightPx < minRoomHeight) continue;
 
-      const overlaps = findHorizontalOverlaps(top.segments, bottom.segments, minRoomWidth);
-      overlaps.forEach(({ left, right }) => {
-        if (
-          hasVerticalBoundary(verticalWalls, left, top.coord, bottom.coord) &&
-          hasVerticalBoundary(verticalWalls, right, top.coord, bottom.coord)
-        ) {
-          const key = `${Math.round(left / 10)}_${Math.round(top.coord / 10)}_${Math.round(right / 10)}_${Math.round(
-            bottom.coord / 10
-          )}`;
-          if (roomKeys.has(key)) return;
-          roomKeys.add(key);
-          rooms.push({
-            name: `Помещение ${rooms.length + 1}`,
-            vertices: [
-              { x: left, y: top.coord },
-              { x: right, y: top.coord },
-              { x: right, y: bottom.coord },
-              { x: left, y: bottom.coord }
-            ]
-          });
+      // Находим перекрытия между верхними и нижними стенами
+      const overlaps = findHorizontalOverlaps(topGroup.segments, bottomGroup.segments, minRoomWidth);
+      
+      for (const overlap of overlaps) {
+        const { left, right } = overlap;
+        const widthPx = right - left;
+        
+        if (widthPx < minRoomWidth) continue;
+        
+        // Проверяем, что пространство не слишком большое (не вся квартира)
+        const spaceAreaPx = widthPx * heightPx;
+        if (spaceAreaPx > MAX_ROOM_AREA_PX) {
+          continue; // Слишком большое - пропускаем
         }
-      });
+        
+        // Проверяем наличие вертикальных границ (стен) слева и справа
+        const hasLeftWall = hasVerticalBoundary(groupedVertical, left, topGroup.coord, bottomGroup.coord, 10);
+        const hasRightWall = hasVerticalBoundary(groupedVertical, right, topGroup.coord, bottomGroup.coord, 10);
+        
+        // Комната должна иметь стены с обеих сторон
+        if (!hasLeftWall || !hasRightWall) {
+          continue;
+        }
+        
+        // Вычисляем площадь в м² для проверки
+        const vertices = [
+          { x: left, y: topGroup.coord },
+          { x: right, y: topGroup.coord },
+          { x: right, y: bottomGroup.coord },
+          { x: left, y: bottomGroup.coord }
+        ];
+        const areaM2 = calculateRoomArea(vertices, scale);
+        
+        // Проверяем, что это не коридор (узкое длинное пространство)
+        const aspectRatio = Math.max(widthPx, heightPx) / Math.min(widthPx, heightPx);
+        
+        // Более строгая фильтрация коридоров и лестниц
+        if (aspectRatio > 2.0) {
+          // Узкое длинное пространство - вероятно коридор или лестница
+          if (areaM2 < 10) {
+            // Маленькое узкое пространство - коридор или лестница, пропускаем
+            continue;
+          }
+        }
+        
+        // Фильтруем очень маленькие пространства (< 1.5 м²) - шум
+        if (areaM2 < 1.5) {
+          continue;
+        }
+        
+        const key = `${Math.round(left / 5)}_${Math.round(topGroup.coord / 5)}_${Math.round(right / 5)}_${Math.round(bottomGroup.coord / 5)}`;
+        if (roomKeys.has(key)) continue;
+        roomKeys.add(key);
+        
+        // Площадь уже вычислена выше
+        const area = areaM2;
+        
+        allSpaces.push({
+          name: `Помещение ${allSpaces.length + 1}`,
+          vertices,
+          area,
+          width: widthPx,
+          height: heightPx
+        });
+      }
     }
   }
 
+  // Группируем и фильтруем помещения
+  const rooms = groupSpacesIntoRooms(allSpaces, scale);
+  
   return rooms;
+}
+
+/**
+ * Группирует мелкие помещения в комнаты
+ * Фильтрует санузлы, коридоры и кладовые
+ * Улучшенный алгоритм: лучше объединяет соседние пространства
+ */
+function groupSpacesIntoRooms(spaces, scale) {
+  if (spaces.length === 0) return [];
+  
+  // Определяем пороги
+  const MIN_LIVING_ROOM_AREA = 8; // м² - минимальная площадь жилой комнаты
+  const MAX_BATHROOM_AREA = 6; // м² - максимальная площадь санузла
+  const MAX_CORRIDOR_AREA = 5; // м² - максимальная площадь коридора
+  const MIN_SPACE_AREA = 1.5; // м² - минимальная площадь для учёта (меньше = шум)
+  const MAX_ROOM_AREA = 50; // м² - максимальная площадь одной комнаты
+  
+  // Фильтруем очень маленькие пространства (шум)
+  const validSpaces = spaces.filter(s => s.area >= MIN_SPACE_AREA);
+  
+  // Дедупликация: убираем перекрывающиеся пространства (оставляем большее)
+  const deduplicatedSpaces = removeOverlappingSpaces(validSpaces);
+  
+  // Сортируем по площади (от больших к маленьким)
+  const sorted = [...deduplicatedSpaces].sort((a, b) => b.area - a.area);
+  
+  const rooms = [];
+  const processed = new Set();
+  
+  // Шаг 1: Обрабатываем большие пространства (>= 8 м²) - это точно комнаты
+  // НО: ограничиваем максимальный размер комнаты
+  
+  for (const space of sorted) {
+    if (processed.has(space.name)) continue;
+    
+    if (space.area >= MIN_LIVING_ROOM_AREA) {
+      // Если пространство слишком большое - это не комната, а вся квартира или ошибка
+      if (space.area > MAX_ROOM_AREA) {
+        // Пропускаем слишком большие пространства - это не отдельная комната
+        continue;
+      }
+      
+      // Большая комната - добавляем как есть
+      rooms.push({
+        ...space,
+        name: space.name,
+        isLivingRoom: true
+      });
+      processed.add(space.name);
+    }
+  }
+  
+  // Шаг 2: Объединяем ТОЛЬКО очень маленькие пространства (< 3 м²) с соседними комнатами
+  // НЕ объединяем пространства >= 3 м² - это отдельные комнаты, разделённые стенами
+  for (const space of sorted) {
+    if (processed.has(space.name)) continue;
+    
+    // Очень маленькие пространства (< 3 м²) - могут быть частью комнаты
+    if (space.area < 3) {
+      // Ищем соседнюю большую комнату для объединения
+      let merged = false;
+      for (let i = 0; i < rooms.length; i++) {
+        if (!rooms[i].isLivingRoom) continue;
+        
+        // Проверяем, не станет ли комната слишком большой после объединения
+        const potentialArea = rooms[i].area + space.area;
+        if (potentialArea > MAX_ROOM_AREA) {
+          continue;
+        }
+        
+        if (areSpacesAdjacent(space, rooms[i])) {
+          // Объединяем только очень маленькие пространства
+          const mergedSpace = mergeSpaces(space, rooms[i]);
+          rooms[i] = {
+            ...mergedSpace,
+            name: rooms[i].name,
+            isLivingRoom: true
+          };
+          processed.add(space.name);
+          merged = true;
+          break;
+        }
+      }
+      
+      if (merged) continue;
+      // Если не нашли соседа, пропускаем очень маленькое пространство
+      continue;
+    }
+    
+    // Шаг 3: Обрабатываем маленькие пространства отдельно
+    if (space.area <= MAX_BATHROOM_AREA) {
+      // Проверяем пропорции - узкие длинные = коридор или лестница
+      const aspectRatio = Math.max(space.width, space.height) / Math.min(space.width, space.height);
+      
+      // Более агрессивная фильтрация коридоров
+      if (aspectRatio > 1.8) {
+        // Коридор или лестница - пропускаем (не часть квартиры)
+        continue;
+      }
+      
+      // Очень маленькие пространства (< 2.5 м²) - вероятно шум или часть коридора
+      if (space.area < 2.5) {
+        continue;
+      }
+      
+      // Проверяем, не является ли это частью коридора по расположению
+      // Коридоры обычно вытянуты и имеют маленькую площадь
+      if (space.area < 4 && aspectRatio > 1.5) {
+        continue;
+      }
+      
+      // Санузел - добавляем как отдельное помещение, но не считаем комнатой
+      rooms.push({
+        ...space,
+        name: space.name,
+        isLivingRoom: false
+      });
+      processed.add(space.name);
+      continue;
+    }
+    
+    // Шаг 4: Средние пространства (6-8 м²) - могут быть маленькой комнатой (например, кухня 6.5 м²)
+    // НЕ объединяем их - это отдельные комнаты, разделённые стенами
+    if (space.area < MIN_LIVING_ROOM_AREA && space.area > MAX_BATHROOM_AREA) {
+      // Средние пространства считаем отдельными комнатами (кухня, маленькая комната)
+      rooms.push({
+        ...space,
+        name: space.name,
+        isLivingRoom: true
+      });
+      processed.add(space.name);
+    }
+  }
+  
+  // Переименовываем жилые комнаты
+  let roomNumber = 1;
+  rooms.forEach(room => {
+    if (room.isLivingRoom) {
+      room.name = `Комната ${roomNumber}`;
+      roomNumber++;
+    } else {
+      // Нежилые помещения оставляем как "Помещение"
+      const spaceIndex = spaces.findIndex(s => 
+        Math.abs(s.area - room.area) < 0.1 &&
+        Math.abs(s.vertices[0].x - room.vertices[0].x) < 0.1
+      );
+      if (spaceIndex >= 0) {
+        room.name = `Помещение ${spaceIndex + 1}`;
+      }
+    }
+  });
+  
+  return rooms;
+}
+
+/**
+ * Проверяет, являются ли два пространства соседними
+ * Улучшенная версия: более точная проверка соседства
+ */
+function areSpacesAdjacent(space1, space2) {
+  // Вычисляем размеры для определения tolerance
+  const avgSize = (Math.max(space1.width, space1.height) + Math.max(space2.width, space2.height)) / 2;
+  const tolerance = Math.max(avgSize * 0.15, 20); // Минимум 20 пикселей
+  
+  // Получаем границы пространств
+  const s1MinX = Math.min(...space1.vertices.map(v => v.x));
+  const s1MaxX = Math.max(...space1.vertices.map(v => v.x));
+  const s1MinY = Math.min(...space1.vertices.map(v => v.y));
+  const s1MaxY = Math.max(...space1.vertices.map(v => v.y));
+  
+  const s2MinX = Math.min(...space2.vertices.map(v => v.x));
+  const s2MaxX = Math.max(...space2.vertices.map(v => v.x));
+  const s2MinY = Math.min(...space2.vertices.map(v => v.y));
+  const s2MaxY = Math.max(...space2.vertices.map(v => v.y));
+  
+  // Проверяем перекрытие по X
+  const xOverlap = !(s1MaxX < s2MinX - tolerance || s2MaxX < s1MinX - tolerance);
+  
+  // Проверяем перекрытие по Y
+  const yOverlap = !(s1MaxY < s2MinY - tolerance || s2MaxY < s1MinY - tolerance);
+  
+  // Соседние, если перекрываются по одной оси и близки по другой
+  const xAdjacent = xOverlap && 
+    (Math.abs(s1MinY - s2MaxY) < tolerance ||
+     Math.abs(s2MinY - s1MaxY) < tolerance);
+  
+  const yAdjacent = yOverlap && 
+    (Math.abs(s1MaxX - s2MinX) < tolerance ||
+     Math.abs(s2MaxX - s1MinX) < tolerance);
+  
+  return xAdjacent || yAdjacent;
+}
+
+/**
+ * Удаляет перекрывающиеся пространства (оставляет большее)
+ */
+function removeOverlappingSpaces(spaces) {
+  const result = [];
+  const processed = new Set();
+  
+  // Сортируем по площади (от больших к маленьким)
+  const sorted = [...spaces].sort((a, b) => b.area - a.area);
+  
+  for (const space of sorted) {
+    if (processed.has(space.name)) continue;
+    
+    // Проверяем, не перекрывается ли это пространство с уже обработанными
+    let isOverlapping = false;
+    for (const existing of result) {
+      const overlapRatio = calculateOverlapRatio(space, existing);
+      // Если перекрытие > 70%, считаем дубликатом
+      if (overlapRatio > 0.7) {
+        isOverlapping = true;
+        break;
+      }
+    }
+    
+    if (!isOverlapping) {
+      result.push(space);
+    }
+    processed.add(space.name);
+  }
+  
+  return result;
+}
+
+/**
+ * Вычисляет коэффициент перекрытия двух пространств (0-1)
+ */
+function calculateOverlapRatio(space1, space2) {
+  const s1MinX = Math.min(...space1.vertices.map(v => v.x));
+  const s1MaxX = Math.max(...space1.vertices.map(v => v.x));
+  const s1MinY = Math.min(...space1.vertices.map(v => v.y));
+  const s1MaxY = Math.max(...space1.vertices.map(v => v.y));
+  
+  const s2MinX = Math.min(...space2.vertices.map(v => v.x));
+  const s2MaxX = Math.max(...space2.vertices.map(v => v.x));
+  const s2MinY = Math.min(...space2.vertices.map(v => v.y));
+  const s2MaxY = Math.max(...space2.vertices.map(v => v.y));
+  
+  // Вычисляем площадь перекрытия
+  const overlapX = Math.max(0, Math.min(s1MaxX, s2MaxX) - Math.max(s1MinX, s2MinX));
+  const overlapY = Math.max(0, Math.min(s1MaxY, s2MaxY) - Math.max(s1MinY, s2MinY));
+  const overlapArea = overlapX * overlapY;
+  
+  // Вычисляем площадь меньшего пространства
+  const smallerArea = Math.min(
+    (s1MaxX - s1MinX) * (s1MaxY - s1MinY),
+    (s2MaxX - s2MinX) * (s2MaxY - s2MinY)
+  );
+  
+  if (smallerArea === 0) return 0;
+  
+  return overlapArea / smallerArea;
+}
+
+/**
+ * Объединяет два пространства в одно
+ */
+function mergeSpaces(space1, space2) {
+  const allX = [...space1.vertices.map(v => v.x), ...space2.vertices.map(v => v.x)];
+  const allY = [...space1.vertices.map(v => v.y), ...space2.vertices.map(v => v.y)];
+  
+  const minX = Math.min(...allX);
+  const maxX = Math.max(...allX);
+  const minY = Math.min(...allY);
+  const maxY = Math.max(...allY);
+  
+  return {
+    vertices: [
+      { x: minX, y: minY },
+      { x: maxX, y: minY },
+      { x: maxX, y: maxY },
+      { x: minX, y: maxY }
+    ],
+    area: space1.area + space2.area,
+    width: maxX - minX,
+    height: maxY - minY
+  };
 }
 
 function groupWallsByCoordinate(walls, orientation, tolerance = 8) {
@@ -453,13 +790,22 @@ function findHorizontalOverlaps(topSegments, bottomSegments, minWidth) {
   return overlaps;
 }
 
-function hasVerticalBoundary(verticalWalls, x, topY, bottomY, tolerance = 8) {
-  return verticalWalls.some((wall) => {
-    if (Math.abs(wall.start.x - x) > tolerance) return false;
-    const startY = Math.min(wall.start.y, wall.end.y);
-    const endY = Math.max(wall.start.y, wall.end.y);
-    return startY <= topY + tolerance && endY >= bottomY - tolerance;
-  });
+function hasVerticalBoundary(groupedVertical, x, topY, bottomY, tolerance = 8) {
+  // Ищем в сгруппированных вертикальных стенах
+  for (const group of groupedVertical) {
+    if (Math.abs(group.coord - x) > tolerance) continue;
+    
+    // Проверяем, есть ли сегмент, который покрывает нужный диапазон
+    for (const segment of group.segments) {
+      const startY = Math.min(segment.start, segment.end);
+      const endY = Math.max(segment.start, segment.end);
+      
+      if (startY <= topY + tolerance && endY >= bottomY - tolerance) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 /**
@@ -537,7 +883,9 @@ export function formatRooms(rooms, scale = 0.01) {
       return `${x},${y}`;
     }).join(';');
     
-    return `${room.name}:${coords}`;
+    // Используем оригинальное имя комнаты
+    const roomName = room.name || `Помещение ${rooms.indexOf(room) + 1}`;
+    return `${roomName}:${coords}`;
   }).join('\n');
 }
 
@@ -554,4 +902,5 @@ export function calculateRoomArea(vertices, scale = 0.01) {
   const areaInPixels = Math.abs(area) / 2;
   return areaInPixels * scale * scale;
 }
+
 

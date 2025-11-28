@@ -662,6 +662,16 @@ const handleFileChange = async (event) => {
       formData.wallsText = recognitionResult.walls || '';
       if (recognitionResult.area) formData.area = recognitionResult.area;
       if (recognitionResult.ceilingHeight) formData.ceilingHeight = recognitionResult.ceilingHeight;
+      if (recognitionResult.address) formData.address = recognitionResult.address;
+      
+      // Автоматически определяем тип квартиры
+      if (recognitionResult.apartmentType) {
+        const typeIndex = layoutTypes.findIndex(t => t === recognitionResult.apartmentType);
+        if (typeIndex >= 0) {
+          formData.layoutType = layoutTypes[typeIndex];
+        }
+      }
+      
       recognitionStatus.value = 'success';
       recognitionStats.value = recognitionResult.stats || null;
       
