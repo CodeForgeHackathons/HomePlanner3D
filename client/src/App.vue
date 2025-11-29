@@ -252,7 +252,7 @@
           <li>Экспорт в DWG, SVG и интерактивный 3D</li>
           <li>История версий и совместная работа с архитектором</li>
         </ul>
-        <button class="btn btn--primary btn--small">
+        <button class="btn btn--primary btn--small" @click="openCaseModal">
           Показать полный кейс
         </button>
       </div>
@@ -267,6 +267,50 @@
         </div>
       </div>
     </section>
+
+    <div v-if="isCaseModalOpen" class="modal-backdrop" @click.self="closeCaseModal">
+      <div class="modal">
+        <div class="modal__header">
+          <h3>Полный кейс HomePlanner3D</h3>
+          <button type="button" class="modal__close" @click="closeCaseModal">×</button>
+        </div>
+        <div class="modal__body case-modal">
+          <div class="case-modal__section">
+            <h4>Что вы получаете</h4>
+            <ul class="case-modal__list">
+              <li>Загрузка техпаспорта или фото плана в один клик</li>
+              <li>Автораспознавание стен, комнат и ключевых меток</li>
+              <li>Быстрый конструктор: снос/перенос стен, перегородки, базовая мебель</li>
+              <li>Визуализация: точный план сверху и прогулка от первого лица</li>
+              <li>Проверка норм: несущие стены, мокрые зоны, вентиляция, пожарные требования</li>
+              <li>AI‑сценарии: 3–5 вариантов зонирования под ваши цели и бюджет</li>
+              <li>Экспорт и заявка: DWG/SVG/3D и передача данных в БТИ</li>
+            </ul>
+          </div>
+
+          <div class="case-modal__section">
+            <h4>Как это работает</h4>
+            <ul class="case-modal__list">
+              <li>Загружаете план квартиры</li>
+              <li>Система распознаёт геометрию и заполняет данные автоматически</li>
+              <li>Редактируете в конструкторе и смотрите результат в 2.5D/FPV</li>
+              <li>Получаете моментальную проверку норм и понятный отчёт</li>
+              <li>Выбираете готовый AI‑вариант или создаёте свой</li>
+              <li>Отправляете заявку и получаете сопровождение экспертов</li>
+            </ul>
+          </div>
+
+          <div class="case-modal__section">
+            <h4>Для кого</h4>
+            <ul class="case-modal__list">
+              <li>Владельцы квартир, семьи, инвесторы</li>
+              <li>Дизайнеры и архитекторы</li>
+              <li>Девелоперы и управляющие компании</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <section class="builder">
       <div class="section-header">
@@ -597,6 +641,13 @@ const openFlowModal = (index) => {
 const closeFlowModal = () => {
   isFlowModalOpen.value = false;
   activeFlowStep.value = null;
+};
+const isCaseModalOpen = ref(false);
+const openCaseModal = () => {
+  isCaseModalOpen.value = true;
+};
+const closeCaseModal = () => {
+  isCaseModalOpen.value = false;
 };
 
 // API включено по умолчанию, задайте VITE_ENABLE_PROJECT_API=false чтобы отключить
@@ -1895,6 +1946,23 @@ section {
 
 .flow-modal__list li {
   margin-bottom: 6px;
+}
+
+.case-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.case-modal__section h4 {
+  margin: 8px 0;
+}
+
+.case-modal__list {
+  padding-left: 18px;
+  color: #c6cad4;
 }
 
 .recognition {
