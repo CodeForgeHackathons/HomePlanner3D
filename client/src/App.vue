@@ -536,9 +536,9 @@
         <p>Цифровой помощник перепланировки: распознаём планы, проверяем нормы, показываем будущее жильё.</p>
       </div>
       <div class="footer__links">
-        <a href="#">Контакты</a>
-        <a href="#">Telegram</a>
-        <a href="#">Политика</a>
+        <a href="#" @click.prevent="openContacts">Контакты</a>
+        <a href="#" @click.prevent="openTelegram">Telegram</a>
+        <a href="#" @click.prevent="openPolicy">Политика</a>
       </div>
     </footer>
     </template>
@@ -658,6 +658,55 @@
             <button type="button" class="btn btn--ghost btn--small" @click="logout">
               Выйти
             </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="isContactsOpen" class="modal-backdrop" @click.self="closeContacts">
+      <div class="modal">
+        <div class="modal__header">
+          <h3>Контакты</h3>
+          <button type="button" class="modal__close" @click="closeContacts">×</button>
+        </div>
+        <div class="modal__body">
+          <p>Telegram: @homeplanner3d</p>
+          <p>Email: info@homeplanner3d.example</p>
+          <div style="margin-top: 8px; display: flex; gap: 8px;">
+            <button type="button" class="btn btn--primary btn--small" @click="openTelegramExternal">Открыть Telegram</button>
+            <button type="button" class="btn btn--ghost btn--small" @click="closeContacts">Закрыть</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="isTelegramOpen" class="modal-backdrop" @click.self="closeTelegram">
+      <div class="modal">
+        <div class="modal__header">
+          <h3>Telegram</h3>
+          <button type="button" class="modal__close" @click="closeTelegram">×</button>
+        </div>
+        <div class="modal__body">
+          <p>Наш официальный канал: @homeplanner3d</p>
+          <div style="margin-top: 8px; display: flex; gap: 8px;">
+            <button type="button" class="btn btn--primary btn--small" @click="openTelegramExternal">Открыть Telegram</button>
+            <button type="button" class="btn btn--ghost btn--small" @click="closeTelegram">Закрыть</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="isPolicyOpen" class="modal-backdrop" @click.self="closePolicy">
+      <div class="modal">
+        <div class="modal__header">
+          <h3>Политика обработки данных</h3>
+          <button type="button" class="modal__close" @click="closePolicy">×</button>
+        </div>
+        <div class="modal__body">
+          <p>Мы бережно относимся к вашим данным: используем шифрование, изолированное хранение и удаление по запросу.</p>
+          <p>Данные из планов применяются только для подготовки сценариев и консультаций.</p>
+          <div style="margin-top: 8px; display: flex; gap: 8px;">
+            <button type="button" class="btn btn--ghost btn--small" @click="closePolicy">Закрыть</button>
           </div>
         </div>
       </div>
@@ -961,6 +1010,9 @@ const authError = ref('');
 const isAuthModalOpen = ref(false);
 const isAccountPage = ref(false);
 const isChatPage = ref(false);
+const isContactsOpen = ref(false);
+const isTelegramOpen = ref(false);
+const isPolicyOpen = ref(false);
 
 const authForm = reactive({
   login: '',
@@ -1000,6 +1052,16 @@ const goToChat = () => {
 
 const goToLandingFromChat = () => {
   isChatPage.value = false;
+};
+
+const openContacts = () => { isContactsOpen.value = true; };
+const closeContacts = () => { isContactsOpen.value = false; };
+const openTelegram = () => { isTelegramOpen.value = true; };
+const closeTelegram = () => { isTelegramOpen.value = false; };
+const openPolicy = () => { isPolicyOpen.value = true; };
+const closePolicy = () => { isPolicyOpen.value = false; };
+const openTelegramExternal = () => {
+  try { if (typeof window !== 'undefined') window.open('https://t.me/homeplanner3d', '_blank'); } catch {}
 };
 
 const parseRooms = () =>
