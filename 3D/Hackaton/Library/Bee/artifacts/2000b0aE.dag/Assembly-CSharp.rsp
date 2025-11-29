@@ -340,6 +340,7 @@
 "Assets/Mini First Person Controller/Scripts/Components/Zoom.cs"
 "Assets/Mini First Person Controller/Scripts/FirstPersonLook.cs"
 "Assets/Mini First Person Controller/Scripts/FirstPersonMovement.cs"
+"Assets/Scripts/AddDeleteWalls.cs"
 "Assets/Scripts/CreateMap.cs"
 "Assets/Scripts/DoorTeleportSyst.cs"
 "Assets/Scripts/PanelScript.cs"

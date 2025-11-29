@@ -310,6 +310,7 @@ public class SimpleMapGenerator : MonoBehaviour
         doorObj.name = $"Door_{doorIndex}_{segmentIndex}";
         doorObj.transform.parent = this.transform;
 
+        doorObj.tag = "Door";
         // Вычисляем позицию (середина между точками двери)
         // Дверь размещается прижатой к полу
         Vector3 position = new Vector3(
