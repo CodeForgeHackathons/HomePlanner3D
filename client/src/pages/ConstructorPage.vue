@@ -14,15 +14,15 @@
     <div class="constructor__grid">
       <div class="constructor__panel constructor__panel--2d">
         <div class="constructor__toolbar">
-          <button :class="['chip', mode === 'select' && 'chip--active']" @click="setMode('select')">Выбор</button>
-          <button :class="['chip', mode === 'addWall' && 'chip--active']" @click="setMode('addWall')">Добавить стену</button>
-          <button :class="['chip', mode === 'removeWall' && 'chip--active']" @click="setMode('removeWall')">Удалить стену</button>
-          <button :class="['chip', mode === 'moveWall' && 'chip--active']" @click="setMode('moveWall')">Переместить стену</button>
-          <button :class="['chip', mode === 'furniture' && 'chip--active']" @click="setMode('furniture')">Мебель</button>
+          <button :class="['chip', mode === 'select' && 'chip--active']" @click="setMode('select')">🖱️ Выбор</button>
+          <button :class="['chip', mode === 'moveWall' && 'chip--active']" @click="setMode('moveWall')">↔️ Переместить</button>
+          <button :class="['chip', mode === 'addWall' && 'chip--active']" @click="setMode('addWall')">➕ Стена</button>
+          <button :class="['chip', mode === 'removeWall' && 'chip--active']" @click="setMode('removeWall')">➖ Стена</button>
+          <button :class="['chip', mode === 'furniture' && 'chip--active']" @click="setMode('furniture')">🪑 Мебель</button>
           <span class="constructor__spacer"></span>
-          <button class="chip" @click="resetView" :disabled="!attachedProject">Сброс вида</button>
-          <button class="chip" @click="openAttach" v-if="!attachedProject">Прикрепить проект</button>
-          <button class="chip" @click="changeAttachment" v-else>Сменить проект</button>
+          <button class="chip" @click="resetView" :disabled="!attachedProject">⟲ Сброс вида</button>
+          <button class="chip" @click="openAttach" v-if="!attachedProject">📎 Прикрепить проект</button>
+          <button class="chip" @click="changeAttachment" v-else>📎 Сменить проект</button>
         </div>
         <div v-if="attachedProject" class="constructor__canvas-wrap" @wheel.prevent="onWheel" @mousedown="onPointerDown" @mousemove="onPointerMove" @mouseup="onPointerUp" @mouseleave="onPointerUp" @click="onCanvasClick" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchEnd">
           <canvas ref="canvas2d"></canvas>
@@ -57,11 +57,11 @@
 
       <div class="constructor__panel constructor__panel--3d">
         <div class="constructor__toolbar">
-          <button :class="['chip', viewMode === 'top' && 'chip--active']" @click="setViewMode('top')">Сверху</button>
-          <button :class="['chip', viewMode === 'fpv' && 'chip--active']" @click="setViewMode('fpv')">От первого лица</button>
+          <button :class="['chip', viewMode === 'top' && 'chip--active']" @click="setViewMode('top')">⬆️ Сверху</button>
+          <button :class="['chip', viewMode === 'fpv' && 'chip--active']" @click="setViewMode('fpv')">👁️ От первого лица</button>
           <span class="constructor__spacer"></span>
-          <button class="chip" @click="attachUnity" :disabled="unityConnected">Подключить Unity</button>
-          <button class="chip" @click="sendGeometryToUnity" :disabled="!unityConnected">Обновить сцену</button>
+          <button class="chip" @click="attachUnity" :disabled="unityConnected">🎮 Подключить Unity</button>
+          <button class="chip" @click="sendGeometryToUnity" :disabled="!unityConnected">🔁 Обновить сцену</button>
         </div>
         <div class="unity__host" ref="unityHost">
           <div v-if="!unityConnected" class="unity__placeholder">
@@ -338,7 +338,7 @@ onMounted(() => { draw() })
 .constructor__header-actions { display: flex; gap: 12px; }
 .constructor__grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; max-width: 100%; }
 .constructor__panel { border: 1px solid rgba(255,255,255,0.08); border-radius: 18px; background: #141829; display: flex; flex-direction: column; min-width: 0; overflow: hidden; }
-.constructor__toolbar { position: sticky; top: 0; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; background: rgba(20,24,41,0.85); backdrop-filter: blur(6px); z-index: 2; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.constructor__toolbar { position: sticky; top: 0; padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; gap: 8px; align-items: center; flex-wrap: nowrap; background: rgba(20,24,41,0.85); backdrop-filter: blur(6px); z-index: 2; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .constructor__spacer { flex: 1; }
 .constructor__canvas-wrap { position: relative; height: clamp(340px, 55vh, 520px); padding: 8px; }
 .constructor__canvas-wrap canvas { width: 100%; height: 100%; display: block; }
@@ -356,10 +356,11 @@ onMounted(() => { draw() })
 .attach__item { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.04); }
 .attach__meta { display: grid; }
 @media (max-width: 1024px) { .constructor__grid { grid-template-columns: 1fr; } }
-@media (max-width: 768px) { .constructor { margin: 24px auto 64px; max-width: 780px; } .constructor__header { border-radius: 20px; padding: 20px; flex-direction: column; gap: 12px; } .constructor__panel { border-radius: 16px; } .constructor__canvas-wrap, .unity__host { height: clamp(280px, 45vh, 420px); } }
+@media (max-width: 768px) { .constructor { margin: 24px auto 64px; max-width: 780px; } .constructor__header { border-radius: 20px; padding: 20px; flex-direction: column; gap: 12px; } .constructor__panel { border-radius: 16px; } .constructor__canvas-wrap, .unity__host { height: clamp(280px, 45vh, 420px); } .constructor__toolbar { flex-direction: column; align-items: stretch; overflow-x: hidden; } .constructor__spacer { display: none; } }
 @media (max-width: 480px) { .constructor__toolbar { gap: 6px; } .constructor__canvas-wrap, .unity__host { height: clamp(240px, 45vh, 360px); } }
 
 :deep(.chip) { padding: 8px 14px; font-size: 13px; }
 :deep(.btn) { font-size: 14px; }
 @media (max-width: 480px) { :deep(.chip) { padding: 6px 10px; font-size: 12px; } }
+@media (max-width: 768px) { :deep(.chip) { width: 100%; justify-content: flex-start; } }
 </style>
