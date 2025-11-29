@@ -77,7 +77,8 @@ const walls = ref(
   ])
 )
 
-const view = reactive({ x: 0, y: 0, scale: 60, dragging: false, lastX: 0, lastY: 0 })
+const view = reactive({ x: 0, y: 0, scale: 70, dragging: false, lastX: 0, lastY: 0 })
+const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? Math.max(1, window.devicePixelRatio) : 1
 
 const canvasSize = computed(() => ({ w: 0, h: 0 }))
 
@@ -87,6 +88,7 @@ const resetView = () => { view.x = 0; view.y = 0; view.scale = 60 }
 
 const worldToScreen = (x, y) => ({ sx: x * view.scale + view.x, sy: y * view.scale + view.y })
 const screenToWorld = (sx, sy) => ({ x: (sx - view.x) / view.scale, y: (sy - view.y) / view.scale })
+const snap = (pt, step = 0.1) => ({ x: Math.round(pt.x / step) * step, y: Math.round(pt.y / step) * step })
 
 const onWheel = (e) => {
   const delta = Math.sign(e.deltaY)
@@ -142,8 +144,9 @@ const onCanvasClick = (e) => {
       if (w.loadBearing) { w.loadBearing = false; w.wallType = 'перегородка' } else { w.loadBearing = true; w.wallType = 'несущая' }
     }
   } else if (mode.value === 'addWall') {
-    if (!addingWall.value) { addingWall.value = { start: pt } } else {
-      const nw = { id: `W${Date.now()}`, start: addingWall.value.start, end: pt, loadBearing: false, thickness: 0.12, wallType: 'перегородка' }
+    const s = snap(pt)
+    if (!addingWall.value) { addingWall.value = { start: s } } else {
+      const nw = { id: `W${Date.now()}`, start: addingWall.value.start, end: s, loadBearing: false, thickness: 0.12, wallType: 'перегородка' }
       walls.value = [...walls.value, nw]
       addingWall.value = null
     }
@@ -157,23 +160,31 @@ const draw = () => {
   const c = canvas2d.value
   if (!c) return
   const parent = c.parentElement
-  const w = parent.clientWidth
-  const h = parent.clientHeight
-  if (c.width !== w || c.height !== h) { c.width = w; c.height = h }
+  const wCSS = parent.clientWidth
+  const hCSS = parent.clientHeight
+  const needResize = c.width !== Math.floor(wCSS * dpr) || c.height !== Math.floor(hCSS * dpr)
+  if (needResize) { c.width = Math.floor(wCSS * dpr); c.height = Math.floor(hCSS * dpr); c.style.width = wCSS + 'px'; c.style.height = hCSS + 'px' }
   const ctx = c.getContext('2d')
-  ctx.clearRect(0, 0, w, h)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, wCSS, hCSS)
   ctx.fillStyle = '#0f1324'
-  ctx.fillRect(0, 0, w, h)
+  ctx.fillRect(0, 0, wCSS, hCSS)
 
   ctx.strokeStyle = '#1f2540'
   ctx.lineWidth = 1
-  for (let gx = ((-view.x / view.scale) | 0) - 1; gx < ((w - view.x) / view.scale) + 1; gx++) {
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  const gxStart = Math.floor((-view.x / view.scale)) - 1
+  const gxEnd = Math.ceil(((wCSS - view.x) / view.scale)) + 1
+  for (let gx = gxStart; gx < gxEnd; gx++) {
     const sx = gx * view.scale + view.x
-    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, h); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, hCSS); ctx.stroke()
   }
-  for (let gy = ((-view.y / view.scale) | 0) - 1; gy < ((h - view.y) / view.scale) + 1; gy++) {
+  const gyStart = Math.floor((-view.y / view.scale)) - 1
+  const gyEnd = Math.ceil(((hCSS - view.y) / view.scale)) + 1
+  for (let gy = gyStart; gy < gyEnd; gy++) {
     const sy = gy * view.scale + view.y
-    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(w, sy); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(wCSS, sy); ctx.stroke()
   }
 
   for (const room of geometry.value.rooms || []) {
@@ -197,7 +208,7 @@ const draw = () => {
     const a = worldToScreen(wline.start.x, wline.start.y)
     const b = worldToScreen(wline.end.x, wline.end.y)
     ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy)
-    ctx.lineWidth = Math.max(2, wline.thickness * view.scale)
+    ctx.lineWidth = Math.max(3, wline.thickness * view.scale)
     ctx.strokeStyle = wline.loadBearing ? '#7dff8e' : '#e9ecf8'
     ctx.stroke()
   }
