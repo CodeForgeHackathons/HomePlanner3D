@@ -7,11 +7,11 @@ using System.Collections.Generic;
 using System.Text.Json;
 using System.IO;
 
-// Сервер для генерации 3D моделей
+// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 3D пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
 class ModelGeneratorServer
 {
     private static HttpListener listener;
-    private static string url = "http://localhost:8080/";
+    private static string url = "http://92.255.79.208:8080/query";
 
     public static async Task Main(string[] args)
     {
@@ -94,7 +94,7 @@ class ModelGeneratorServer
         resp.Close();
     }
 
-    // Генерация 3D модели в структурированном формате
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 3D пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     private static Model3D Generate3DModel(MapData mapData)
     {
         var model = new Model3D();
@@ -105,20 +105,20 @@ class ModelGeneratorServer
             faceCount = 0
         };
 
-        // Генерируем стены
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         model.walls = GenerateWalls(mapData);
 
-        // Генерируем окна
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ
         model.windows = GenerateWindows(mapData);
 
-        // Генерируем двери
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         model.doors = GenerateDoors(mapData);
 
-        // Генерируем пол и потолок
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         model.floor = GenerateFloor(mapData);
         model.ceiling = GenerateCeiling(mapData);
 
-        // Подсчитываем статистику
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         CalculateStatistics(model);
 
         return model;
@@ -152,17 +152,17 @@ class ModelGeneratorServer
 
     private static Wall3D CreateWall(Point2D start, Point2D end, float height, float thickness, int wallIndex)
     {
-        // Вычисляем позицию (середина между точками)
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ)
         float centerX = (start.x + end.x) / 2f;
         float centerZ = (start.y + end.y) / 2f;
         float centerY = height / 2f;
 
-        // Вычисляем длину и направление
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         float dx = end.x - start.x;
         float dz = end.y - start.y;
         float length = (float)Math.Sqrt(dx * dx + dz * dz);
 
-        // Вычисляем угол поворота
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         float angle = (float)Math.Atan2(dx, dz) * (180f / (float)Math.PI);
 
         return new Wall3D
@@ -181,24 +181,24 @@ class ModelGeneratorServer
     {
         var vertices = new List<Point3D>();
 
-        // Вектор направления стены
+        // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         float dx = end.x - start.x;
         float dz = end.y - start.y;
         float length = (float)Math.Sqrt(dx * dx + dz * dz);
 
-        // Нормализованный вектор направления
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         float dirX = dx / length;
         float dirZ = dz / length;
 
-        // Перпендикулярный вектор для толщины
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         float perpX = -dirZ;
         float perpZ = dirX;
 
-        // Вычисляем 8 вершин куба (стены)
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ 8 пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ)
         float halfThickness = thickness / 2f;
         float halfHeight = height / 2f;
 
-        // Нижние вершины
+        // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         vertices.Add(new Point3D
         {
             x = start.x + perpX * halfThickness,
@@ -224,7 +224,7 @@ class ModelGeneratorServer
             z = end.y + perpZ * halfThickness
         });
 
-        // Верхние вершины
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ
         vertices.Add(new Point3D
         {
             x = start.x + perpX * halfThickness,
@@ -289,7 +289,7 @@ class ModelGeneratorServer
     {
         float centerX = (start.x + end.x) / 2f;
         float centerZ = (start.y + end.y) / 2f;
-        float centerY = wallHeight / 2f; // Окно посередине стены по высоте
+        float centerY = wallHeight / 2f; // пїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
 
         float dx = end.x - start.x;
         float dz = end.y - start.y;
@@ -341,7 +341,7 @@ class ModelGeneratorServer
     {
         float centerX = (start.x + end.x) / 2f;
         float centerZ = (start.y + end.y) / 2f;
-        float centerY = height / 2f; // Дверь прижата к полу
+        float centerY = height / 2f; // пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
 
         float dx = end.x - start.x;
         float dz = end.y - start.y;
@@ -399,7 +399,7 @@ class ModelGeneratorServer
         };
     }
 
-    // Генерация OBJ файла
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ OBJ пїЅпїЅпїЅпїЅпїЅ
     private static string GenerateOBJFile(MapData mapData)
     {
         var objBuilder = new StringBuilder();
@@ -410,7 +410,7 @@ class ModelGeneratorServer
         var allVertices = new List<Point3D>();
         var faceOffset = 0;
 
-        // Генерируем стены
+        // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
         var walls = GenerateWalls(mapData);
         foreach (var wall in walls)
         {
@@ -421,12 +421,12 @@ class ModelGeneratorServer
                 allVertices.Add(vertex);
             }
 
-            // Добавляем грани для куба (стены)
-            // Нижняя грань
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ пїЅпїЅпїЅпїЅ (пїЅпїЅпїЅпїЅпїЅ)
+            // пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
             objBuilder.AppendLine($"f {faceOffset + 1} {faceOffset + 2} {faceOffset + 3} {faceOffset + 4}");
-            // Верхняя грань
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
             objBuilder.AppendLine($"f {faceOffset + 5} {faceOffset + 6} {faceOffset + 7} {faceOffset + 8}");
-            // Боковые грани
+            // пїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅ
             objBuilder.AppendLine($"f {faceOffset + 1} {faceOffset + 5} {faceOffset + 6} {faceOffset + 2}");
             objBuilder.AppendLine($"f {faceOffset + 2} {faceOffset + 6} {faceOffset + 7} {faceOffset + 3}");
             objBuilder.AppendLine($"f {faceOffset + 3} {faceOffset + 7} {faceOffset + 8} {faceOffset + 4}");
@@ -439,19 +439,19 @@ class ModelGeneratorServer
         return objBuilder.ToString();
     }
 
-    // Вспомогательные методы
+    // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ
     private static float GetWallHeight(MapData mapData, int wallIndex)
     {
         if (mapData.wallHeights != null && wallIndex >= 0 && wallIndex < mapData.wallHeights.Length)
             return mapData.wallHeights[wallIndex];
-        return 2.5f; // Значение по умолчанию
+        return 2.5f; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     }
 
     private static float GetWallThickness(MapData mapData, int wallIndex)
     {
         if (mapData.wallThicknesses != null && wallIndex >= 0 && wallIndex < mapData.wallThicknesses.Length)
             return mapData.wallThicknesses[wallIndex];
-        return 0.2f; // Значение по умолчанию
+        return 0.2f; // пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ
     }
 
     private static float GetMaxWallHeight(MapData mapData)
@@ -506,7 +506,7 @@ class ModelGeneratorServer
         foreach (var wall in model.walls)
         {
             vertexCount += wall.vertices.Count;
-            faceCount += 6; // 6 граней у куба
+            faceCount += 6; // 6 пїЅпїЅпїЅпїЅпїЅпїЅ пїЅ пїЅпїЅпїЅпїЅ
         }
 
         model.metadata.vertexCount = vertexCount;
@@ -514,7 +514,7 @@ class ModelGeneratorServer
     }
 }
 
-// Классы данных для JSON
+// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ JSON
 public class MapData
 {
     public Point2D[] points { get; set; }
@@ -547,7 +547,7 @@ public class DoorData
     public int wallIndex { get; set; }
 }
 
-// Классы для 3D модели
+// пїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅ 3D пїЅпїЅпїЅпїЅпїЅпїЅ
 public class Model3D
 {
     public ModelMetadata metadata { get; set; }
