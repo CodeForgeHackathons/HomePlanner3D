@@ -27,7 +27,7 @@
           <button class="chip" @click="changeAttachment" v-else>📎 Сменить проект</button>
         </div>
         <div v-if="attachedProject" class="constructor__canvas-wrap" @wheel.prevent="onWheel" @mousedown="onPointerDown" @mousemove="onPointerMove" @mouseup="onPointerUp" @mouseleave="onPointerUp" @click="onCanvasClick" @touchstart="onTouchStart" @touchmove.prevent="onTouchMove" @touchend="onTouchEnd" @touchcancel="onTouchEnd">
-          <canvas ref="canvas2d"></canvas>
+          <canvas ref="canvas2d" willReadFrequently="true"></canvas>
         </div>
         <div v-else class="attach__wrap">
           <div class="attach__card">
@@ -125,6 +125,18 @@ const view = reactive({ x: 0, y: 0, scale: 70, dragging: false, lastX: 0, lastY:
 const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? Math.max(1, window.devicePixelRatio) : 1
 
 const canvasSize = computed(() => ({ w: 0, h: 0 }))
+
+// Глобальные функции для связи с Unity из index.html
+window.vueApp = {
+  unityReady: () => {
+    unityConnected.value = true
+    console.log('Unity reported ready - sending initial data')
+    setTimeout(() => sendDataToUnity(), 1000)
+  },
+  unityHidden: () => {
+    unityConnected.value = false
+  }
+}
 
 const setMode = (m) => {
   mode.value = m;
@@ -704,34 +716,35 @@ const prepareUnityData = () => {
 
 // Функция отправки данных в Unity
 const sendDataToUnity = () => {
-  if (typeof window === 'undefined' || !window.SendMessage) {
-    console.warn('[Unity] SendMessage not available - Unity not loaded or not in WebGL build')
-    return false
-  }
+  if (window.isUnityReady && window.isUnityReady()) {
+    const unityData = prepareUnityData()
+    if (!unityData) {
+      console.warn('[Unity] No data to send to Unity')
+      return false
+    }
 
-  const unityData = prepareUnityData()
-  if (!unityData) {
-    console.warn('[Unity] No data to send to Unity')
-    return false
-  }
-
-  try {
-    // Отправляем данные в Unity
-    window.SendMessage('SceneController', 'LoadLayoutData', JSON.stringify(unityData))
-    console.log('[Unity] Data sent to Unity successfully')
-    return true
-  } catch (error) {
-    console.error('[Unity] Error sending data to Unity:', error)
+    const success = window.sendToUnity(JSON.stringify(unityData))
+    if (success) {
+      console.log('[Unity] Data sent successfully')
+    } else {
+      console.warn('[Unity] Failed to send data to Unity')
+    }
+    return success
+  } else {
+    console.warn('[Unity] Unity not ready - make sure Unity is loaded first')
     return false
   }
 }
 
 const attachUnity = () => {
-  unityConnected.value = true
-  // Автоматически отправляем данные при подключении Unity
-  setTimeout(() => {
+  if (window.initializeUnity && window.initializeUnity()) {
+    console.log('Unity initialization started')
+    // Статус подключения установится через window.vueApp.unityReady
+  } else {
+    console.warn('Unity already loaded or initialization failed')
+    unityConnected.value = true
     sendDataToUnity()
-  }, 1000)
+  }
 }
 
 const sendGeometryToUnity = () => {
