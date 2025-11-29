@@ -7,7 +7,68 @@ type BtiAgent struct {
 	Prompt string `json:"prompt"`
 }
 
+type Constraints struct {
+	ForbiddenMoves []string `json:"forbiddenMoves,omitempty"`
+	RegionRules    []string `json:"regionRules,omitempty"`
+}
+
+type ConstraintsInput struct {
+	ForbiddenMoves []string `json:"forbiddenMoves,omitempty"`
+	RegionRules    []string `json:"regionRules,omitempty"`
+}
+
+type Geometry struct {
+	Rooms []*Room `json:"rooms"`
+}
+
+type GeometryInput struct {
+	Rooms []*RoomInput `json:"rooms"`
+}
+
 type Mutation struct {
+}
+
+type Plan struct {
+	Address           string  `json:"address"`
+	Area              float64 `json:"area"`
+	Source            string  `json:"source"`
+	LayoutType        string  `json:"layoutType"`
+	FamilyProfile     string  `json:"familyProfile"`
+	Goal              string  `json:"goal"`
+	Prompt            string  `json:"prompt"`
+	CeilingHeight     float64 `json:"ceilingHeight"`
+	FloorDelta        float64 `json:"floorDelta"`
+	RecognitionStatus string  `json:"recognitionStatus"`
+}
+
+type PlanInput struct {
+	Address           string  `json:"address"`
+	Area              float64 `json:"area"`
+	Source            string  `json:"source"`
+	LayoutType        string  `json:"layoutType"`
+	FamilyProfile     string  `json:"familyProfile"`
+	Goal              string  `json:"goal"`
+	Prompt            string  `json:"prompt"`
+	CeilingHeight     float64 `json:"ceilingHeight"`
+	FloorDelta        float64 `json:"floorDelta"`
+	RecognitionStatus string  `json:"recognitionStatus"`
+}
+
+type PlanningProject struct {
+	ID          string       `json:"id"`
+	Status      string       `json:"status"`
+	CreatedAt   string       `json:"createdAt"`
+	Plan        *Plan        `json:"plan"`
+	Geometry    *Geometry    `json:"geometry"`
+	Walls       []*Wall      `json:"walls"`
+	Constraints *Constraints `json:"constraints,omitempty"`
+}
+
+type PlanningProjectInput struct {
+	Plan        *PlanInput        `json:"plan"`
+	Geometry    *GeometryInput    `json:"geometry"`
+	Walls       []*WallInput      `json:"walls"`
+	Constraints *ConstraintsInput `json:"constraints,omitempty"`
 }
 
 type Query struct {
@@ -21,10 +82,60 @@ type RegisterInput struct {
 	Birthday string `json:"birthday"`
 }
 
+type Room struct {
+	ID       string    `json:"id"`
+	Name     string    `json:"name"`
+	Height   float64   `json:"height"`
+	Vertices []*Vertex `json:"vertices"`
+}
+
+type RoomInput struct {
+	ID       *string        `json:"id,omitempty"`
+	Name     string         `json:"name"`
+	Height   float64        `json:"height"`
+	Vertices []*VertexInput `json:"vertices"`
+}
+
 type User struct {
 	ID       string `json:"id"`
 	Email    string `json:"email"`
 	Login    string `json:"login"`
 	Username string `json:"username"`
 	Birthday string `json:"birthday"`
+}
+
+type Vertex struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type VertexInput struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type Wall struct {
+	ID          string   `json:"id"`
+	Start       *WallEnd `json:"start"`
+	End         *WallEnd `json:"end"`
+	LoadBearing bool     `json:"loadBearing"`
+	Thickness   float64  `json:"thickness"`
+}
+
+type WallEnd struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type WallEndInput struct {
+	X float64 `json:"x"`
+	Y float64 `json:"y"`
+}
+
+type WallInput struct {
+	ID          *string       `json:"id,omitempty"`
+	Start       *WallEndInput `json:"start"`
+	End         *WallEndInput `json:"end"`
+	LoadBearing bool          `json:"loadBearing"`
+	Thickness   float64       `json:"thickness"`
 }

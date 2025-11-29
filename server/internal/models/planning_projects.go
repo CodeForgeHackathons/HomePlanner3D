@@ -4,19 +4,25 @@ import (
 	"time"
 )
 
-type Planning_projects struct {
-	ID                 uint `gorm:"primaryKey"`
-	User_id            uint `gorm:"not null"`
-	Status             string
-	Created_at         time.Time
-	Address            string
-	Area               string
-	Source             string
-	Layout_type        string
-	Family_profile     string
-	Goal               string
-	Prompt             string
-	Ceiling_height     string
-	Floor_delta        string
-	Recognition_status string
+type PlanningProject struct {
+	ID                int64 `gorm:"primaryKey; autoIncrement"`
+	User_id           int64 `gorm:"not null"`
+	User              User  `gorm:"foreignKey:User_id"`
+	Status            string
+	Created_at        time.Time `gorm:"default:now()`
+	Address           string
+	Area              string
+	Source            string
+	LayoutType        string
+	FamilyProfile     string
+	Goal              string
+	Prompt            string
+	CeilingHeight     string
+	FloorDelta        string
+	RecognitionStatus string
+
+	Rooms       []Room        `gorm:"foreignKey:ProjectID"`
+	Walls       []Wall        `gorm:"foreignKey:ProjectID"`
+	Constraints []Constraints `gorm:"foreignKey:ProjectID"`
+	AIAnalysis  AIAnalysis    `gorm:"foreignKey:ProjectID"`
 }

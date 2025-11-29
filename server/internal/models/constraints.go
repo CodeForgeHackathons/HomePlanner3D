@@ -1,7 +1,8 @@
 package models
 
 type Constraints struct {
-	Project_id      uint `gorm:"not null"`
-	Forbidden_moves string
-	Region_rules    string
+	ID             int64 `gorm:"not null; autoIncrement"`
+	ProjectID      int64 `gorm:"not null: unique"`
+	ForbiddenMoves string
+	RegionRules    string
 }
