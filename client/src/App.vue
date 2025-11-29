@@ -27,8 +27,8 @@
           без сложных терминов и техподробностей.
         </p>
         <div class="hero__actions">
-          <button class="btn btn--primary">Загрузить план</button>
-          <button class="btn btn--ghost">Посмотреть примеры</button>
+          <button class="btn btn--primary" @click="scrollToIntake">Загрузить план</button>
+          <button class="btn btn--ghost" @click="scrollToGallery">Посмотреть примеры</button>
         </div>
       </div>
       <div class="hero__visual">
@@ -50,7 +50,7 @@
     </header>
 
     <template v-if="!isAccountPage">
-      <section class="intake">
+      <section class="intake" id="intake">
       <div class="section-header">
         <h2>Шаг 1. Расскажите о квартире</h2>
         <p>
@@ -300,7 +300,7 @@
       <button class="btn btn--ghost">Получить отчёт по нормам</button>
     </section>
 
-    <section class="gallery">
+    <section class="gallery" id="gallery">
       <div class="section-header">
         <h2>Готовые варианты перепланировок</h2>
         <p>Выберите по типу квартиры, целям и доступному бюджету.</p>
@@ -563,6 +563,16 @@ import { graphqlRequest, ASK_BTI_AGENT_MUTATION } from './utils/graphqlClient.js
 import AccountPage from './pages/AccountPage.vue';
 import beforeImageUrl from './assets/Сценарий «Семейная 70 м²»ДО.png';
 import afterImageUrl from './assets/Сценарий «Семейная 70 м²»ПОСЛЕ.png';
+
+const scrollToSection = (id) => {
+  try {
+    const el = typeof document !== 'undefined' ? document.getElementById(id) : null;
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } catch {}
+};
+
+const scrollToIntake = () => scrollToSection('intake');
+const scrollToGallery = () => scrollToSection('gallery');
 
 // API включено по умолчанию, задайте VITE_ENABLE_PROJECT_API=false чтобы отключить
 const projectApiEnabled =
