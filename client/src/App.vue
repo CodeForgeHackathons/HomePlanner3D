@@ -1723,47 +1723,125 @@ const expertErrors = computed(() => {
 });
 
 const downloadGuide = () => {
-  const content = [
-    '# Гид по перепланировке квартиры',
+  const lines = [
+    'Гид по перепланировке квартиры',
     '',
-    '## 1. Подготовка',
-    '- Соберите техпаспорт и поэтажный план дома.',
-    '- Уточните серию дома, несущие стены и мокрые зоны.',
-    '- Зафиксируйте цели: больше света, дополнительная комната, кабинет и т.д.',
+    '1. Подготовка',
+    '• Соберите техпаспорт и поэтажный план дома.',
+    '• Уточните серию дома, несущие стены и мокрые зоны.',
+    '• Зафиксируйте цели: больше света, дополнительная комната, кабинет и т.д.',
     '',
-    '## 2. Анализ плана',
-    '- Загрузите PDF/фото плана в HomePlanner3D.',
-    '- Проверьте распознанные стены, комнаты и масштабы.',
-    '- Уточните ограничения: перенос кухонь/санузлов, вентиляция, пожарные требования.',
+    '2. Анализ плана',
+    '• Загрузите PDF/фото плана в HomePlanner3D.',
+    '• Проверьте распознанные стены, комнаты и масштабы.',
+    '• Уточните ограничения: перенос кухонь/санузлов, вентиляция, пожарные требования.',
     '',
-    '## 3. Редактура и визуализация',
-    '- В конструкторе попробуйте безопасные проёмы, перегородки и мебель.',
-    '- Оцените план сверху и прогулку от первого лица.',
+    '3. Редактура и визуализация',
+    '• В конструкторе попробуйте безопасные проёмы, перегородки и мебель.',
+    '• Оцените план сверху и прогулку от первого лица.',
     '',
-    '## 4. Проверка норм',
-    '- Несущие стены: проёмы только с проектным усилением.',
-    '- Мокрые зоны: перенос над жилыми не допускается.',
-    '- Вентиляция: шахты не перекрывать.',
-    '- Пожарная безопасность: проходы ≥ 0.9 м, двери мокрых зон ≥ 0.7 м.',
+    '4. Проверка норм',
+    '• Несущие стены: проёмы только с проектным усилением.',
+    '• Мокрые зоны: перенос над жилыми не допускается.',
+    '• Вентиляция: шахты не перекрывать.',
+    '• Пожарная безопасность: проходы ≥ 0.9 м, двери мокрых зон ≥ 0.7 м.',
     '',
-    '## 5. Документы для согласования',
-    '- План до/после с экспликацией помещений.',
-    '- Поэтажный план и серия дома.',
-    '- Проект перепланировки (при затрагивании несущих/инженерии).',
+    '5. Документы для согласования',
+    '• План до/после с экспликацией.',
+    '• Поэтажный план и серия дома.',
+    '• Проект перепланировки (при несущих/инженерии).',
     '',
-    '## 6. Советы',
-    '- Начинайте с минимальных вмешательств, затем усложняйте.',
-    '- Сохраняйте версии и сравнивайте варианты.',
-    '- При сомнениях — консультация с экспертом БТИ.',
+    '6. Советы',
+    '• Начинайте с мини‑вмешательств, затем усложняйте.',
+    '• Сохраняйте версии и сравнивайте варианты.',
+    '• При сомнениях — консультация с экспертом БТИ.',
     '',
     '— HomePlanner3D'
-  ].join('\n');
+  ];
 
-  const blob = new Blob([content], { type: 'text/markdown' });
-  const url = URL.createObjectURL(blob);
+  const pageW = 595;
+  const pageH = 842;
+  const scale = Math.min(2, window.devicePixelRatio || 1);
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.floor(pageW * scale);
+  canvas.height = Math.floor(pageH * scale);
+  const ctx = canvas.getContext('2d');
+  ctx.scale(scale, scale);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, pageW, pageH);
+  ctx.fillStyle = '#333333';
+  ctx.font = '8px Arial, sans-serif';
+  const x = 40;
+  const maxWidth = pageW - 80;
+  let y = 60;
+
+  const drawWrapped = (text) => {
+    if (!text) { y += 4; return; }
+    const words = text.split(' ');
+    let line = '';
+    for (let i = 0; i < words.length; i++) {
+      const test = line ? line + ' ' + words[i] : words[i];
+      if (ctx.measureText(test).width > maxWidth) {
+        ctx.fillText(line, x, y);
+        y += 12;
+        line = words[i];
+      } else {
+        line = test;
+      }
+    }
+    if (line) {
+      ctx.fillText(line, x, y);
+      y += 12;
+    }
+  };
+
+  ctx.font = '600 10px Arial, sans-serif';
+  drawWrapped(lines[0]);
+  ctx.font = '8px Arial, sans-serif';
+  lines.slice(1).forEach(drawWrapped);
+
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
+  const base64 = dataUrl.split(',')[1];
+  const binary = atob(base64);
+  const imgBytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) imgBytes[i] = binary.charCodeAt(i);
+
+  const enc = new TextEncoder();
+  const parts = [];
+  const offsets = [];
+  let pos = 0;
+  const pushStr = (s) => { const b = enc.encode(s); parts.push(b); offsets.push(pos); pos += b.length; };
+  const pushPre = (s) => { const b = enc.encode(s); parts.push(b); offsets.push(pos); pos += b.length; };
+  const pushBin = (b) => { parts.push(b); pos += b.length; };
+  const pushPost = (s) => { const b = enc.encode(s); parts.push(b); pos += b.length; };
+
+  pushStr('%PDF-1.4\n');
+  pushStr('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+  pushStr('2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n');
+  pushStr('3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n');
+
+  const imgObjHeader = `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${pageW} /Height ${pageH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgBytes.length} >>\nstream\n`;
+  pushPre(imgObjHeader);
+  pushBin(imgBytes);
+  pushPost('\nendstream\nendobj\n');
+
+  const contentStream = 'q\n595 0 0 842 0 0 cm\n/Im0 Do\nQ\n';
+  pushStr(`5 0 obj\n<< /Length ${enc.encode(contentStream).length} >>\nstream\n${contentStream}endstream\nendobj\n`);
+
+  const xrefPos = pos;
+  let xref = 'xref\n0 6\n';
+  xref += '0000000000 65535 f \n';
+  for (let i = 0; i < offsets.length; i++) {
+    const off = String(offsets[i]).padStart(10, '0');
+    xref += `${off} 00000 n \n`;
+  }
+  const trailer = `trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefPos}\n%%EOF`;
+
+  const pdfBytes = new Blob([...parts, enc.encode(xref), enc.encode(trailer)], { type: 'application/pdf' });
+  const url = URL.createObjectURL(pdfBytes);
   const link = document.createElement('a');
   link.href = url;
-  link.download = `homeplanner3d-guide-${Date.now()}.md`;
+  link.download = `homeplanner3d-guide-${Date.now()}.pdf`;
   link.click();
   URL.revokeObjectURL(url);
 };
