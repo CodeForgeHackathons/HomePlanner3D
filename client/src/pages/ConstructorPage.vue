@@ -250,6 +250,31 @@ const draw = () => {
 const attachUnity = () => { unityConnected.value = true }
 const sendGeometryToUnity = () => {}
 
+const openAttach = async () => {
+  isAttachLoading.value = true
+  await new Promise((r) => setTimeout(r, 400))
+  availableProjects.value = [
+    { id: 101, plan: { address: 'Москва, ул. Примерная, д. 1', area: 50.9 }, geometry: { rooms: [{ id: 'R1', name: 'Гостиная', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 5.2, y: 0 }, { x: 5.2, y: 4.1 }, { x: 0, y: 4.1 }] }] }, walls: [{ id: 'W1', start: { x: 0, y: 0 }, end: { x: 5.2, y: 0 }, loadBearing: true, thickness: 0.2, wallType: 'несущая' }] },
+    { id: 102, plan: { address: 'СПб, пр. Тестовый, д. 7', area: 68.0 }, geometry: { rooms: [{ id: 'R1', name: 'Кухня', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 3.6, y: 0 }, { x: 3.6, y: 3.0 }, { x: 0, y: 3.0 }] }] }, walls: [{ id: 'W1', start: { x: 3.6, y: 0 }, end: { x: 3.6, y: 3.0 }, loadBearing: false, thickness: 0.12, wallType: 'перегородка' }] },
+    { id: 103, plan: { address: 'Казань, ул. Образцовая, д. 3', area: 42.3 }, geometry: { rooms: [{ id: 'R1', name: 'Спальня', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 4.2, y: 0 }, { x: 4.2, y: 3.2 }, { x: 0, y: 3.2 }] }] }, walls: [{ id: 'W1', start: { x: 0, y: 3.2 }, end: { x: 4.2, y: 3.2 }, loadBearing: true, thickness: 0.2, wallType: 'несущая' }] },
+  ]
+  isAttachLoading.value = false
+  isSelecting.value = true
+}
+
+const attachSelected = () => {
+  const p = availableProjects.value.find((x) => String(x.id) === String(selectedProjectId.value))
+  if (!p) return
+  attachedProject.value = p
+  geometry.value = p.geometry || { rooms: [] }
+  walls.value = p.walls || []
+  isSelecting.value = false
+  selectedProjectId.value = null
+}
+
+const cancelSelecting = () => { isSelecting.value = false; selectedProjectId.value = null }
+const changeAttachment = () => { attachedProject.value = null; isSelecting.value = false; selectedProjectId.value = null }
+
 watch([geometry, walls], () => { if (unityConnected.value) sendGeometryToUnity() })
 
 onMounted(() => { draw() })
@@ -286,33 +311,3 @@ onMounted(() => { draw() })
 :deep(.chip) { padding: 8px 14px; font-size: 13px; }
 :deep(.btn) { font-size: 14px; }
 </style>
-const openAttach = async () => {
-  isAttachLoading.value = true
-  await new Promise((r) => setTimeout(r, 400))
-  availableProjects.value = [
-    { id: 101, plan: { address: 'Москва, ул. Примерная, д. 1', area: 50.9 }, geometry: { rooms: [{ id: 'R1', name: 'Гостиная', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 5.2, y: 0 }, { x: 5.2, y: 4.1 }, { x: 0, y: 4.1 }] }] }, walls: [{ id: 'W1', start: { x: 0, y: 0 }, end: { x: 5.2, y: 0 }, loadBearing: true, thickness: 0.2, wallType: 'несущая' }] },
-    { id: 102, plan: { address: 'СПб, пр. Тестовый, д. 7', area: 68.0 }, geometry: { rooms: [{ id: 'R1', name: 'Кухня', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 3.6, y: 0 }, { x: 3.6, y: 3.0 }, { x: 0, y: 3.0 }] }] }, walls: [{ id: 'W1', start: { x: 3.6, y: 0 }, end: { x: 3.6, y: 3.0 }, loadBearing: false, thickness: 0.12, wallType: 'перегородка' }] },
-    { id: 103, plan: { address: 'Казань, ул. Образцовая, д. 3', area: 42.3 }, geometry: { rooms: [{ id: 'R1', name: 'Спальня', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 4.2, y: 0 }, { x: 4.2, y: 3.2 }, { x: 0, y: 3.2 }] }] }, walls: [{ id: 'W1', start: { x: 0, y: 3.2 }, end: { x: 4.2, y: 3.2 }, loadBearing: true, thickness: 0.2, wallType: 'несущая' }] },
-  ]
-  isAttachLoading.value = false
-  isSelecting.value = true
-}
-
-const attachSelected = () => {
-  const p = availableProjects.value.find((x) => String(x.id) === String(selectedProjectId.value))
-  if (!p) return
-  attachedProject.value = p
-  geometry.value = p.geometry || { rooms: [] }
-  walls.value = p.walls || []
-  isSelecting.value = false
-  selectedProjectId.value = null
-}
-
-const cancelSelecting = () => { isSelecting.value = false; selectedProjectId.value = null }
-const changeAttachment = () => { attachedProject.value = null; isSelecting.value = false; selectedProjectId.value = null }
-.attach__wrap { position: relative; height: 520px; display: grid; place-items: center; }
-.attach__card { width: 100%; max-width: 560px; padding: 20px; border-radius: 18px; background: #151826; border: 1px solid rgba(255,255,255,0.08); display: grid; gap: 12px; }
-.attach__actions { display: flex; gap: 8px; justify-content: flex-end; }
-.attach__list { display: grid; gap: 10px; margin-top: 8px; }
-.attach__item { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.04); }
-.attach__meta { display: grid; }
