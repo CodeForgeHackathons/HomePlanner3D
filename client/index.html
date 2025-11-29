@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HomePlanner3D - Конструктор планировки квартир</title>
 
+    <!-- Загружаем Unity WebGL loader -->
+    <script src="/Build3D/Build/Build3D.loader.js"></script>
+
     <style>
       /* Стили для Unity контейнера */
       #unityContainer {
@@ -109,25 +112,26 @@
       let unityInstance = null;
       let isUnityLoaded = false;
 
-      // Функция для проверки загрузки UnityLoader
-      function checkUnityLoader() {
-        console.log('Проверка UnityLoader...');
-        console.log('typeof UnityLoader:', typeof UnityLoader);
-        console.log('window.UnityLoader:', window.UnityLoader);
-
-        if (typeof UnityLoader !== 'undefined') {
-          console.log('UnityLoader найден!');
-          return true;
+      // Функция проверки доступности Unity API
+      function checkUnityAPI() {
+        console.log('Проверка Unity API...');
+        console.log('createUnityInstance:', typeof createUnityInstance);
+        console.log('UnityLoader:', typeof UnityLoader);
+        
+        // Проверяем различные варианты API
+        if (typeof createUnityInstance !== 'undefined') {
+          return 'createUnityInstance';
+        } else if (typeof UnityLoader !== 'undefined') {
+          return 'UnityLoader';
         } else {
-          console.log('UnityLoader не найден в глобальной области');
-          return false;
+          return null;
         }
       }
 
       // Функция инициализации Unity
       function initUnity() {
         console.log('Инициализация Unity...');
-
+        
         // Показываем overlay загрузки
         const overlay = document.getElementById('unityOverlay');
         const progressBar = document.getElementById('unityProgress');
@@ -135,42 +139,51 @@
 
         overlay.style.display = 'flex';
 
-        // Проверяем доступность UnityLoader
-        if (!checkUnityLoader()) {
-          console.error('UnityLoader не доступен. Загрузка скрипта...');
+        // Проверяем доступный API
+        const apiType = checkUnityAPI();
+        console.log('Доступный API:', apiType);
 
-          // Динамически загружаем UnityLoader
-          const script = document.createElement('script');
-          script.src = '/Build3D/Build/Build3D.loader.js';
-          script.onload = function() {
-            console.log('UnityLoader загружен динамически');
-            setTimeout(() => {
-              if (checkUnityLoader()) {
-                startUnityInitialization();
-              } else {
-                showUnityError('UnityLoader не загрузился даже после динамической загрузки');
-              }
-            }, 100);
-          };
-          script.onerror = function() {
-            showUnityError('Не удалось загрузить Build3D.loader.js');
-          };
-          document.head.appendChild(script);
-          return;
-        }
+        if (apiType === 'createUnityInstance') {
+          // Современный API (Unity 2020+)
+          console.log('Используем createUnityInstance...');
+          
+          createUnityInstance(document.getElementById("unityContainer"), {
+            dataUrl: "/Build3D/Build/Build3D.data",
+            frameworkUrl: "/Build3D/Build/Build3D.framework.js",
+            codeUrl: "/Build3D/Build/Build3D.wasm",
+            streamingAssetsUrl: "StreamingAssets",
+            companyName: "HomePlanner3D",
+            productName: "HomePlanner3D",
+            productVersion: "1.0",
+          }, 
+          (progress) => {
+            // Прогресс загрузки
+            const percentage = Math.round(progress * 100);
+            progressBar.style.width = percentage + '%';
+            progressText.textContent = percentage + '%';
+            console.log('Прогресс загрузки Unity:', percentage + '%');
 
-        startUnityInitialization();
-      }
+            if (percentage === 100) {
+              setTimeout(() => {
+                // Даем немного времени на завершение инициализации
+              }, 1000);
+            }
+          })
+          .then((instance) => {
+            unityInstance = instance;
+            console.log('Unity instance создана:', unityInstance);
+            onUnityLoaded();
+          })
+          .catch((error) => {
+            console.error('Ошибка инициализации Unity:', error);
+            showUnityError('Не удалось загрузить Unity: ' + error);
+          });
 
-      function startUnityInitialization() {
-        const overlay = document.getElementById('unityOverlay');
-        const progressBar = document.getElementById('unityProgress');
-        const progressText = document.getElementById('unityProgressText');
-
-        if (typeof UnityLoader !== 'undefined') {
+        } else if (apiType === 'UnityLoader') {
+          // Старый API (Unity до 2020)
+          console.log('Используем UnityLoader...');
+          
           try {
-            console.log('Запуск UnityLoader.instantiate...');
-
             unityInstance = UnityLoader.instantiate(
               "unityContainer",
               "/Build3D/Build/Build3D.json",
@@ -189,15 +202,13 @@
                 }
               }
             );
-
-            console.log('Unity WebGL начал загрузку...');
-
+            console.log('Unity WebGL начал загрузку через UnityLoader...');
           } catch (error) {
-            console.error('Ошибка инициализации Unity:', error);
-            showUnityError('Не удалось инициализировать Unity: ' + error.message);
+            console.error('Ошибка инициализации UnityLoader:', error);
+            showUnityError('Ошибка UnityLoader: ' + error.message);
           }
         } else {
-          showUnityError('UnityLoader не найден после проверки');
+          showUnityError('Unity WebGL API не найден. Проверьте загрузку Build3D.loader.js');
         }
       }
 
@@ -207,15 +218,20 @@
         overlay.innerHTML = `
           <h2>Ошибка загрузки 3D</h2>
           <p>${message}</p>
-          <div style="margin: 20px 0; padding: 10px; background: #333; border-radius: 5px; font-family: monospace; font-size: 12px;">
-            Проверьте:<br>
-            1. Файлы в папке Build3D/Build/<br>
-            2. Консоль браузера для подробностей<br>
-            3. Пути к файлам Unity
+          <div style="margin: 10px 0; font-size: 14px;">
+            Проверьте консоль браузера для подробной информации
           </div>
           <button class="unity-btn" onclick="location.reload()">Обновить страницу</button>
-          <button class="unity-btn" onclick="initUnity()" style="background: #ff6b6b;">Повторить загрузку</button>
+          <button class="unity-btn" onclick="testUnityLoader()" style="background: #4CAF50;">Проверить загрузчик</button>
         `;
+      }
+
+      function testUnityLoader() {
+        console.log('=== ТЕСТ ЗАГРУЗЧИКА UNITY ===');
+        console.log('Build3D.loader.js загружен:', typeof createUnityInstance !== 'undefined' || typeof UnityLoader !== 'undefined');
+        console.log('createUnityInstance:', typeof createUnityInstance);
+        console.log('UnityLoader:', typeof UnityLoader);
+        console.log('============================');
       }
 
       // Функция вызывается когда Unity загружен
@@ -302,10 +318,11 @@
         return false;
       };
 
-      // Проверяем доступность UnityLoader при загрузке страницы
+      // Проверяем доступность Unity API при загрузке
       document.addEventListener('DOMContentLoaded', function() {
-        console.log('DOM загружен, проверяем UnityLoader...');
-        checkUnityLoader();
+        console.log('DOM загружен, проверяем Unity API...');
+        const apiType = checkUnityAPI();
+        console.log('Доступный Unity API:', apiType);
       });
 
       console.log('Unity WebGL integration script loaded');
