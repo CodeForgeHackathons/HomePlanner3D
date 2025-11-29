@@ -53,32 +53,35 @@ type YandexAIResponse struct {
 }
 
 func AiAnalyze(userQuestion string) (*BTIResponse, error) {
+    if len(userQuestion) > 450000 {
+        userQuestion = userQuestion[:450000]
+    }
 
-	request := YandexAIRequest{
-		ModelURI: modelURI,
-		CompletionOptions: CompletionOptions{
-			Temperature: 0.3,
-			MaxTokens:   6000,
-		},
-		Messages: []Message{
-			{
-				Role: "user",
-				Text: userQuestion,
-			},
-		},
-	}
+    instr := "Ты эксперт БТИ. Верни только JSON без текста: {\"is_valid\":bool,\"decision\":string,\"justification\":string,\"technical_basis\":[string],\"limitations_risks\":[string],\"clarification_needed\":[string]}"
 
-	response, err := sendToYandexAI(request)
-	if err != nil {
-		return nil, err
-	}
+    request := YandexAIRequest{
+        ModelURI: modelURI,
+        CompletionOptions: CompletionOptions{
+            Temperature: 0.3,
+            MaxTokens:   3000,
+        },
+        Messages: []Message{
+            {Role: "system", Text: instr},
+            {Role: "user", Text: userQuestion},
+        },
+    }
 
-	btiResponse, err := parseAiResponse(response)
-	if err != nil {
-		return nil, fmt.Errorf("ошибка парсинга ответа AI: %w", err)
-	}
+    response, err := sendToYandexAI(request)
+    if err != nil {
+        return createFallbackResponse(userQuestion), nil
+    }
 
-	return btiResponse, nil
+    btiResponse, err := parseAiResponse(response)
+    if err != nil {
+        return createFallbackResponse(response), nil
+    }
+
+    return btiResponse, nil
 
 }
 
