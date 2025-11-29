@@ -259,11 +259,11 @@
       <div class="recognition__preview">
         <div class="preview-card">
           <p>До</p>
-          <div class="preview-card__plan preview-card__plan--raw"></div>
+          <img :src="beforeImageUrl" alt="До" class="preview-card__img" loading="lazy" />
         </div>
         <div class="preview-card">
           <p>После</p>
-          <div class="preview-card__plan preview-card__plan--clean"></div>
+          <img :src="afterImageUrl" alt="После" class="preview-card__img" loading="lazy" />
         </div>
       </div>
     </section>
@@ -1997,6 +1997,14 @@ section {
   background-image: linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px),
     linear-gradient(0deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
   background-size: 24px 24px;
+}
+
+.preview-card__img {
+  width: 100%;
+  height: auto;
+  border-radius: 14px;
+  margin-top: 12px;
+  background: #0b0d12;
 }
 
 .builder__grid {
