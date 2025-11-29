@@ -220,10 +220,25 @@
           <div class="step__number">{{ index + 1 }}</div>
           <h3>{{ step.title }}</h3>
           <p>{{ step.description }}</p>
-          <a class="step__link" href="#">Узнать больше</a>
+          <a class="step__link" href="#" @click.prevent="openFlowModal(index)">Узнать больше</a>
         </article>
       </div>
     </section>
+
+    <div v-if="isFlowModalOpen" class="modal-backdrop" @click.self="closeFlowModal">
+      <div class="modal">
+        <div class="modal__header">
+          <h3>{{ steps[activeFlowStep]?.title }}</h3>
+          <button type="button" class="modal__close" @click="closeFlowModal">×</button>
+        </div>
+        <div class="modal__body">
+          <p class="flow-modal__lead">{{ steps[activeFlowStep]?.description }}</p>
+          <ul class="flow-modal__list">
+            <li v-for="detail in steps[activeFlowStep]?.details" :key="detail">{{ detail }}</li>
+          </ul>
+        </div>
+      </div>
+    </div>
 
     <section class="recognition">
       <div class="recognition__text">
@@ -573,6 +588,16 @@ const scrollToSection = (id) => {
 
 const scrollToIntake = () => scrollToSection('intake');
 const scrollToGallery = () => scrollToSection('gallery');
+const isFlowModalOpen = ref(false);
+const activeFlowStep = ref(null);
+const openFlowModal = (index) => {
+  activeFlowStep.value = index;
+  isFlowModalOpen.value = true;
+};
+const closeFlowModal = () => {
+  isFlowModalOpen.value = false;
+  activeFlowStep.value = null;
+};
 
 // API включено по умолчанию, задайте VITE_ENABLE_PROJECT_API=false чтобы отключить
 const projectApiEnabled =
@@ -1206,26 +1231,51 @@ const steps = [
     title: 'Распознаём план',
     description:
       'Загрузите PDF, DWG или фото — алгоритм строит точную геометрию и сетку помещений.',
+    details: [
+      'Поддержка PDF/изображений, OCR и извлечение метаданных',
+      'Определение стен, комнат и масштаба с ML/алгоритмами',
+      'Автозаполнение формы и показ статистики распознавания'
+    ],
   },
   {
     title: 'Конструктор 2.5D/FPV',
     description:
       'Переходите в интерактивный редактор: сносите стены, ставьте перегородки, расставляйте мебель.',
+    details: [
+      'Режим плана сверху и вид от первого лица',
+      'Снос/перенос стен, перегородки, базовая мебель',
+      'История изменений и сравнение сценариев'
+    ],
   },
   {
     title: 'Автопроверки норм',
     description:
       'Каждое действие сверяется с СНиП, Жилищным кодексом и правилами ЖК в реальном времени.',
+    details: [
+      'Несущие стены и допустимые проёмы',
+      'Мокрые зоны и вентиляция',
+      'Пожарные требования и эвакуационные пути'
+    ],
   },
   {
     title: 'AI генерирует варианты',
     description:
       'Получайте 3–5 сценариев зонирования с учётом целей, бюджета и ограничений.',
+    details: [
+      'Генерация вариантов на основе целей и ограничений',
+      'Предварительная проверка норм для каждого варианта',
+      'Быстрая отправка в конструктор для доработки'
+    ],
   },
   {
     title: 'Передаём в БТИ',
     description:
       'Отправьте заявку, и эксперты БТИ оформят проект и согласуют перепланировку.',
+    details: [
+      'Подготовка пакета данных и чертежей',
+      'Передача в БТИ без повторного ввода',
+      'Поддержка консультаций и статусов'
+    ],
   },
 ];
 
@@ -1831,6 +1881,20 @@ section {
   color: #7d8bff;
   text-decoration: none;
   font-weight: 600;
+}
+
+.flow-modal__lead {
+  color: #c6cad4;
+  margin-bottom: 12px;
+}
+
+.flow-modal__list {
+  padding-left: 18px;
+  color: #c6cad4;
+}
+
+.flow-modal__list li {
+  margin-bottom: 6px;
 }
 
 .recognition {
