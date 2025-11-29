@@ -20,21 +20,37 @@ func atofPtr(s *string) float64 {
 }
 
 func ConvertDbProjectToGraph(p *models.PlanningProject) *model.PlanningProject {
-	return &model.PlanningProject{
-		ID:        fmt.Sprintf("%d", p.ID),
-		Status:    p.Status,
-		CreatedAt: p.Created_at.Format(time.RFC3339),
-		Plan: &model.Plan{
-			Address:           p.Address,
-			Area:              atofPtr(&p.Area),
-			Source:            p.Source,
-			LayoutType:        p.LayoutType,
-			FamilyProfile:     p.FamilyProfile,
-			Goal:              p.Goal,
-			Prompt:            p.Prompt,
-			CeilingHeight:     atofPtr(&p.CeilingHeight),
-			FloorDelta:        atofPtr(&p.FloorDelta),
-			RecognitionStatus: p.RecognitionStatus,
-		},
-	}
+    var clientTs *string
+    if p.ClientTimestamp != "" {
+        clientTs = &p.ClientTimestamp
+    }
+    var planFile *model.PlanFile
+    if p.PlanFileName != "" {
+        planFile = &model.PlanFile{
+            Name:    p.PlanFileName,
+            Size:    atofPtr(&p.PlanFileSize),
+            Type:    p.PlanFileType,
+            Content: p.PlanFileContent,
+        }
+    }
+
+    return &model.PlanningProject{
+        ID:              fmt.Sprintf("%d", p.ID),
+        Status:          p.Status,
+        CreatedAt:       p.Created_at.Format(time.RFC3339),
+        ClientTimestamp: clientTs,
+        Plan: &model.Plan{
+            Address:           p.Address,
+            Area:              atofPtr(&p.Area),
+            Source:            p.Source,
+            LayoutType:        p.LayoutType,
+            FamilyProfile:     p.FamilyProfile,
+            Goal:              p.Goal,
+            Prompt:            p.Prompt,
+            CeilingHeight:     atofPtr(&p.CeilingHeight),
+            FloorDelta:        atofPtr(&p.FloorDelta),
+            RecognitionStatus: p.RecognitionStatus,
+            File:              planFile,
+        },
+    }
 }

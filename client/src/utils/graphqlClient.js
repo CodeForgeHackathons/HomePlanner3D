@@ -211,6 +211,7 @@ export const CREATE_PLANNING_PROJECT_MUTATION = `
       id
       status
       createdAt
+      clientTimestamp
       plan {
         address
         area
@@ -222,6 +223,7 @@ export const CREATE_PLANNING_PROJECT_MUTATION = `
         ceilingHeight
         floorDelta
         recognitionStatus
+        file { name size type content }
       }
       geometry {
         rooms {
@@ -246,6 +248,7 @@ export const CREATE_PLANNING_PROJECT_MUTATION = `
         }
         loadBearing
         thickness
+        wallType
       }
       constraints {
         forbiddenMoves

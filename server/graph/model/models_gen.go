@@ -29,46 +29,64 @@ type Mutation struct {
 }
 
 type Plan struct {
-	Address           string  `json:"address"`
-	Area              float64 `json:"area"`
-	Source            string  `json:"source"`
-	LayoutType        string  `json:"layoutType"`
-	FamilyProfile     string  `json:"familyProfile"`
-	Goal              string  `json:"goal"`
-	Prompt            string  `json:"prompt"`
-	CeilingHeight     float64 `json:"ceilingHeight"`
-	FloorDelta        float64 `json:"floorDelta"`
-	RecognitionStatus string  `json:"recognitionStatus"`
+	Address           string    `json:"address"`
+	Area              float64   `json:"area"`
+	Source            string    `json:"source"`
+	LayoutType        string    `json:"layoutType"`
+	FamilyProfile     string    `json:"familyProfile"`
+	Goal              string    `json:"goal"`
+	Prompt            string    `json:"prompt"`
+	CeilingHeight     float64   `json:"ceilingHeight"`
+	FloorDelta        float64   `json:"floorDelta"`
+	RecognitionStatus string    `json:"recognitionStatus"`
+	File              *PlanFile `json:"file,omitempty"`
+}
+
+type PlanFile struct {
+	Name    string  `json:"name"`
+	Size    float64 `json:"size"`
+	Type    string  `json:"type"`
+	Content string  `json:"content"`
+}
+
+type PlanFileInput struct {
+	Name    string  `json:"name"`
+	Size    float64 `json:"size"`
+	Type    string  `json:"type"`
+	Content string  `json:"content"`
 }
 
 type PlanInput struct {
-	Address           string  `json:"address"`
-	Area              float64 `json:"area"`
-	Source            string  `json:"source"`
-	LayoutType        string  `json:"layoutType"`
-	FamilyProfile     string  `json:"familyProfile"`
-	Goal              string  `json:"goal"`
-	Prompt            string  `json:"prompt"`
-	CeilingHeight     float64 `json:"ceilingHeight"`
-	FloorDelta        float64 `json:"floorDelta"`
-	RecognitionStatus string  `json:"recognitionStatus"`
+	Address           string         `json:"address"`
+	Area              float64        `json:"area"`
+	Source            string         `json:"source"`
+	LayoutType        string         `json:"layoutType"`
+	FamilyProfile     string         `json:"familyProfile"`
+	Goal              string         `json:"goal"`
+	Prompt            string         `json:"prompt"`
+	CeilingHeight     float64        `json:"ceilingHeight"`
+	FloorDelta        float64        `json:"floorDelta"`
+	RecognitionStatus string         `json:"recognitionStatus"`
+	File              *PlanFileInput `json:"file,omitempty"`
 }
 
 type PlanningProject struct {
-	ID          string       `json:"id"`
-	Status      string       `json:"status"`
-	CreatedAt   string       `json:"createdAt"`
-	Plan        *Plan        `json:"plan"`
-	Geometry    *Geometry    `json:"geometry"`
-	Walls       []*Wall      `json:"walls"`
-	Constraints *Constraints `json:"constraints,omitempty"`
+	ID              string       `json:"id"`
+	Status          string       `json:"status"`
+	CreatedAt       string       `json:"createdAt"`
+	ClientTimestamp *string      `json:"clientTimestamp,omitempty"`
+	Plan            *Plan        `json:"plan"`
+	Geometry        *Geometry    `json:"geometry"`
+	Walls           []*Wall      `json:"walls"`
+	Constraints     *Constraints `json:"constraints,omitempty"`
 }
 
 type PlanningProjectInput struct {
-	Plan        *PlanInput        `json:"plan"`
-	Geometry    *GeometryInput    `json:"geometry"`
-	Walls       []*WallInput      `json:"walls"`
-	Constraints *ConstraintsInput `json:"constraints,omitempty"`
+	Plan            *PlanInput        `json:"plan"`
+	Geometry        *GeometryInput    `json:"geometry"`
+	Walls           []*WallInput      `json:"walls"`
+	Constraints     *ConstraintsInput `json:"constraints,omitempty"`
+	ClientTimestamp *string           `json:"clientTimestamp,omitempty"`
 }
 
 type Query struct {
@@ -120,6 +138,7 @@ type Wall struct {
 	End         *WallEnd `json:"end"`
 	LoadBearing bool     `json:"loadBearing"`
 	Thickness   float64  `json:"thickness"`
+	WallType    *string  `json:"wallType,omitempty"`
 }
 
 type WallEnd struct {
@@ -138,4 +157,5 @@ type WallInput struct {
 	End         *WallEndInput `json:"end"`
 	LoadBearing bool          `json:"loadBearing"`
 	Thickness   float64       `json:"thickness"`
+	WallType    *string       `json:"wallType,omitempty"`
 }

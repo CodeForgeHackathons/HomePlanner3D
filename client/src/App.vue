@@ -1095,30 +1095,31 @@ const parseRooms = () =>
       };
     });
 
-const parseWalls = () =>
-  formData.wallsText
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line, index) => {
-      const [segment, type = 'ненесущая', thickness = '0.12'] = line.split(';');
-      const [startStr, endStr] = segment.split('->');
-      const [sx, sy] = startStr
-        .split(',')
-        .map((value) => Number(value.trim()))
-        .slice(0, 2);
-      const [ex, ey] = endStr
-        .split(',')
-        .map((value) => Number(value.trim()))
-        .slice(0, 2);
-      return {
-        id: `W${index + 1}`,
-        start: { x: sx, y: sy },
-        end: { x: ex, y: ey },
-        loadBearing: type.toLowerCase().includes('несущ'),
-        thickness: Number(thickness.trim()),
-      };
-    });
+  const parseWalls = () =>
+    formData.wallsText
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        const [segment, type = 'ненесущая', thickness = '0.12'] = line.split(';');
+        const [startStr, endStr] = segment.split('->');
+        const [sx, sy] = startStr
+          .split(',')
+          .map((value) => Number(value.trim()))
+          .slice(0, 2);
+        const [ex, ey] = endStr
+          .split(',')
+          .map((value) => Number(value.trim()))
+          .slice(0, 2);
+        return {
+          id: `W${index + 1}`,
+          start: { x: sx, y: sy },
+          end: { x: ex, y: ey },
+          loadBearing: type.toLowerCase().includes('несущ'),
+          thickness: Number(thickness.trim()),
+          wallType: String(type).trim(),
+        };
+      });
 
 const parseConstraints = () =>
   formData.constraintsText
@@ -1325,7 +1326,7 @@ const formatBirthday = (value) => {
 /**
  * Отправляет данные проекта на бэкенд через GraphQL (createPlanningProject)
  */
-const sendToApi = async (payload) => {
+  const sendToApi = async (payload) => {
   if (!projectApiEnabled) {
     console.info('BTI-agent API отключён (VITE_ENABLE_PROJECT_API=false).');
     return { ok: false, unavailable: true };
@@ -1356,6 +1357,14 @@ const sendToApi = async (payload) => {
         ceilingHeight: Number(plan.ceilingHeight || 2.7),
         floorDelta: Number(plan.floorDelta || 0),
         recognitionStatus: String(plan.recognitionStatus || 'idle'),
+        file: plan.file
+          ? {
+              name: String(plan.file.name || ''),
+              size: Number(plan.file.size || 0),
+              type: String(plan.file.type || ''),
+              content: String(plan.file.content || ''),
+            }
+          : undefined,
       },
       geometry: {
         rooms: Array.isArray(geometry.rooms)
@@ -1376,12 +1385,14 @@ const sendToApi = async (payload) => {
             end: { x: Number(w.end?.x || 0), y: Number(w.end?.y || 0) },
             loadBearing: !!w.loadBearing,
             thickness: Number(w.thickness || 0.12),
+            wallType: w.wallType ? String(w.wallType) : undefined,
           }))
         : [],
       constraints: {
         forbiddenMoves: Array.isArray(constraints.forbiddenMoves) ? constraints.forbiddenMoves : [],
         regionRules: regionRulesArr,
       },
+      clientTimestamp: typeof payload.timestamp === 'string' ? payload.timestamp : new Date().toISOString(),
     };
 
     const result = await graphqlRequest(CREATE_PLANNING_PROJECT_MUTATION, { input });

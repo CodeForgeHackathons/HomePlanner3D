@@ -54,6 +54,7 @@ input WallInput {
   end: WallEndInput!
   loadBearing: Boolean!
   thickness: Float!
+  wallType: String
 }
 
 input ConstraintsInput {
@@ -76,6 +77,7 @@ input PlanInput {
   ceilingHeight: Float!
   floorDelta: Float!
   recognitionStatus: String!
+  file: PlanFileInput
 }
 
 input PlanningProjectInput {
@@ -83,6 +85,7 @@ input PlanningProjectInput {
   geometry: GeometryInput!
   walls: [WallInput!]!
   constraints: ConstraintsInput
+  clientTimestamp: String
 }
 
 # ------------ OUTPUT TYPES ------------
@@ -114,6 +117,7 @@ type Wall {
   end: WallEnd!
   loadBearing: Boolean!
   thickness: Float!
+  wallType: String
 }
 
 type Constraints {
@@ -132,16 +136,33 @@ type Plan {
   ceilingHeight: Float!
   floorDelta: Float!
   recognitionStatus: String!
+  file: PlanFile
 }
 
 type PlanningProject {
   id: ID!
   status: String!
   createdAt: String!
+  clientTimestamp: String
   plan: Plan!
   geometry: Geometry!
   walls: [Wall!]!
   constraints: Constraints
+}
+
+# Дополнительные типы для передачи файла плана
+input PlanFileInput {
+  name: String!
+  size: Float!
+  type: String!
+  content: String!
+}
+
+type PlanFile {
+  name: String!
+  size: Float!
+  type: String!
+  content: String!
 }
 
 

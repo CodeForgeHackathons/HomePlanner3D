@@ -66,6 +66,7 @@ type ComplexityRoot struct {
 		Area              func(childComplexity int) int
 		CeilingHeight     func(childComplexity int) int
 		FamilyProfile     func(childComplexity int) int
+		File              func(childComplexity int) int
 		FloorDelta        func(childComplexity int) int
 		Goal              func(childComplexity int) int
 		LayoutType        func(childComplexity int) int
@@ -74,14 +75,22 @@ type ComplexityRoot struct {
 		Source            func(childComplexity int) int
 	}
 
+	PlanFile struct {
+		Content func(childComplexity int) int
+		Name    func(childComplexity int) int
+		Size    func(childComplexity int) int
+		Type    func(childComplexity int) int
+	}
+
 	PlanningProject struct {
-		Constraints func(childComplexity int) int
-		CreatedAt   func(childComplexity int) int
-		Geometry    func(childComplexity int) int
-		ID          func(childComplexity int) int
-		Plan        func(childComplexity int) int
-		Status      func(childComplexity int) int
-		Walls       func(childComplexity int) int
+		ClientTimestamp func(childComplexity int) int
+		Constraints     func(childComplexity int) int
+		CreatedAt       func(childComplexity int) int
+		Geometry        func(childComplexity int) int
+		ID              func(childComplexity int) int
+		Plan            func(childComplexity int) int
+		Status          func(childComplexity int) int
+		Walls           func(childComplexity int) int
 	}
 
 	Query struct {
@@ -114,6 +123,7 @@ type ComplexityRoot struct {
 		LoadBearing func(childComplexity int) int
 		Start       func(childComplexity int) int
 		Thickness   func(childComplexity int) int
+		WallType    func(childComplexity int) int
 	}
 
 	WallEnd struct {
@@ -216,6 +226,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Plan.FamilyProfile(childComplexity), true
+	case "Plan.file":
+		if e.complexity.Plan.File == nil {
+			break
+		}
+
+		return e.complexity.Plan.File(childComplexity), true
 	case "Plan.floorDelta":
 		if e.complexity.Plan.FloorDelta == nil {
 			break
@@ -253,6 +269,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Plan.Source(childComplexity), true
 
+	case "PlanFile.content":
+		if e.complexity.PlanFile.Content == nil {
+			break
+		}
+
+		return e.complexity.PlanFile.Content(childComplexity), true
+	case "PlanFile.name":
+		if e.complexity.PlanFile.Name == nil {
+			break
+		}
+
+		return e.complexity.PlanFile.Name(childComplexity), true
+	case "PlanFile.size":
+		if e.complexity.PlanFile.Size == nil {
+			break
+		}
+
+		return e.complexity.PlanFile.Size(childComplexity), true
+	case "PlanFile.type":
+		if e.complexity.PlanFile.Type == nil {
+			break
+		}
+
+		return e.complexity.PlanFile.Type(childComplexity), true
+
+	case "PlanningProject.clientTimestamp":
+		if e.complexity.PlanningProject.ClientTimestamp == nil {
+			break
+		}
+
+		return e.complexity.PlanningProject.ClientTimestamp(childComplexity), true
 	case "PlanningProject.constraints":
 		if e.complexity.PlanningProject.Constraints == nil {
 			break
@@ -407,6 +454,12 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Wall.Thickness(childComplexity), true
+	case "Wall.wallType":
+		if e.complexity.Wall.WallType == nil {
+			break
+		}
+
+		return e.complexity.Wall.WallType(childComplexity), true
 
 	case "WallEnd.x":
 		if e.complexity.WallEnd.X == nil {
@@ -432,6 +485,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputBTI_agent,
 		ec.unmarshalInputConstraintsInput,
 		ec.unmarshalInputGeometryInput,
+		ec.unmarshalInputPlanFileInput,
 		ec.unmarshalInputPlanInput,
 		ec.unmarshalInputPlanningProjectInput,
 		ec.unmarshalInputRegisterInput,
@@ -832,6 +886,8 @@ func (ec *executionContext) fieldContext_Mutation_createPlanningProject(ctx cont
 				return ec.fieldContext_PlanningProject_status(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_PlanningProject_createdAt(ctx, field)
+			case "clientTimestamp":
+				return ec.fieldContext_PlanningProject_clientTimestamp(ctx, field)
 			case "plan":
 				return ec.fieldContext_PlanningProject_plan(ctx, field)
 			case "geometry":
@@ -1148,6 +1204,161 @@ func (ec *executionContext) fieldContext_Plan_recognitionStatus(_ context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Plan_file(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_file,
+		func(ctx context.Context) (any, error) {
+			return obj.File, nil
+		},
+		nil,
+		ec.marshalOPlanFile2ᚖServerBTIᚋgraphᚋmodelᚐPlanFile,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_file(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "name":
+				return ec.fieldContext_PlanFile_name(ctx, field)
+			case "size":
+				return ec.fieldContext_PlanFile_size(ctx, field)
+			case "type":
+				return ec.fieldContext_PlanFile_type(ctx, field)
+			case "content":
+				return ec.fieldContext_PlanFile_content(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PlanFile", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanFile_name(ctx context.Context, field graphql.CollectedField, obj *model.PlanFile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanFile_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanFile_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanFile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanFile_size(ctx context.Context, field graphql.CollectedField, obj *model.PlanFile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanFile_size,
+		func(ctx context.Context) (any, error) {
+			return obj.Size, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanFile_size(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanFile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanFile_type(ctx context.Context, field graphql.CollectedField, obj *model.PlanFile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanFile_type,
+		func(ctx context.Context) (any, error) {
+			return obj.Type, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanFile_type(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanFile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanFile_content(ctx context.Context, field graphql.CollectedField, obj *model.PlanFile) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanFile_content,
+		func(ctx context.Context) (any, error) {
+			return obj.Content, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanFile_content(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanFile",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PlanningProject_id(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1235,6 +1446,35 @@ func (ec *executionContext) fieldContext_PlanningProject_createdAt(_ context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _PlanningProject_clientTimestamp(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanningProject_clientTimestamp,
+		func(ctx context.Context) (any, error) {
+			return obj.ClientTimestamp, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanningProject_clientTimestamp(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanningProject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PlanningProject_plan(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -1279,6 +1519,8 @@ func (ec *executionContext) fieldContext_PlanningProject_plan(_ context.Context,
 				return ec.fieldContext_Plan_floorDelta(ctx, field)
 			case "recognitionStatus":
 				return ec.fieldContext_Plan_recognitionStatus(ctx, field)
+			case "file":
+				return ec.fieldContext_Plan_file(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Plan", field.Name)
 		},
@@ -1353,6 +1595,8 @@ func (ec *executionContext) fieldContext_PlanningProject_walls(_ context.Context
 				return ec.fieldContext_Wall_loadBearing(ctx, field)
 			case "thickness":
 				return ec.fieldContext_Wall_thickness(ctx, field)
+			case "wallType":
+				return ec.fieldContext_Wall_wallType(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Wall", field.Name)
 		},
@@ -2033,6 +2277,35 @@ func (ec *executionContext) fieldContext_Wall_thickness(_ context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Wall_wallType(ctx context.Context, field graphql.CollectedField, obj *model.Wall) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Wall_wallType,
+		func(ctx context.Context) (any, error) {
+			return obj.WallType, nil
+		},
+		nil,
+		ec.marshalOString2ᚖstring,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Wall_wallType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Wall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3637,6 +3910,54 @@ func (ec *executionContext) unmarshalInputGeometryInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputPlanFileInput(ctx context.Context, obj any) (model.PlanFileInput, error) {
+	var it model.PlanFileInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "size", "type", "content"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "size":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("size"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Size = data
+		case "type":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("type"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Type = data
+		case "content":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("content"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Content = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputPlanInput(ctx context.Context, obj any) (model.PlanInput, error) {
 	var it model.PlanInput
 	asMap := map[string]any{}
@@ -3644,7 +3965,7 @@ func (ec *executionContext) unmarshalInputPlanInput(ctx context.Context, obj any
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"address", "area", "source", "layoutType", "familyProfile", "goal", "prompt", "ceilingHeight", "floorDelta", "recognitionStatus"}
+	fieldsInOrder := [...]string{"address", "area", "source", "layoutType", "familyProfile", "goal", "prompt", "ceilingHeight", "floorDelta", "recognitionStatus", "file"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3721,6 +4042,13 @@ func (ec *executionContext) unmarshalInputPlanInput(ctx context.Context, obj any
 				return it, err
 			}
 			it.RecognitionStatus = data
+		case "file":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
+			data, err := ec.unmarshalOPlanFileInput2ᚖServerBTIᚋgraphᚋmodelᚐPlanFileInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.File = data
 		}
 	}
 
@@ -3734,7 +4062,7 @@ func (ec *executionContext) unmarshalInputPlanningProjectInput(ctx context.Conte
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"plan", "geometry", "walls", "constraints"}
+	fieldsInOrder := [...]string{"plan", "geometry", "walls", "constraints", "clientTimestamp"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3769,6 +4097,13 @@ func (ec *executionContext) unmarshalInputPlanningProjectInput(ctx context.Conte
 				return it, err
 			}
 			it.Constraints = data
+		case "clientTimestamp":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("clientTimestamp"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ClientTimestamp = data
 		}
 	}
 
@@ -3953,7 +4288,7 @@ func (ec *executionContext) unmarshalInputWallInput(ctx context.Context, obj any
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"id", "start", "end", "loadBearing", "thickness"}
+	fieldsInOrder := [...]string{"id", "start", "end", "loadBearing", "thickness", "wallType"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -3995,6 +4330,13 @@ func (ec *executionContext) unmarshalInputWallInput(ctx context.Context, obj any
 				return it, err
 			}
 			it.Thickness = data
+		case "wallType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("wallType"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.WallType = data
 		}
 	}
 
@@ -4203,6 +4545,62 @@ func (ec *executionContext) _Plan(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "file":
+			out.Values[i] = ec._Plan_file(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var planFileImplementors = []string{"PlanFile"}
+
+func (ec *executionContext) _PlanFile(ctx context.Context, sel ast.SelectionSet, obj *model.PlanFile) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, planFileImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PlanFile")
+		case "name":
+			out.Values[i] = ec._PlanFile_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "size":
+			out.Values[i] = ec._PlanFile_size(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "type":
+			out.Values[i] = ec._PlanFile_type(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "content":
+			out.Values[i] = ec._PlanFile_content(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4252,6 +4650,8 @@ func (ec *executionContext) _PlanningProject(ctx context.Context, sel ast.Select
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "clientTimestamp":
+			out.Values[i] = ec._PlanningProject_clientTimestamp(ctx, field, obj)
 		case "plan":
 			out.Values[i] = ec._PlanningProject_plan(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -4554,6 +4954,8 @@ func (ec *executionContext) _Wall(ctx context.Context, sel ast.SelectionSet, obj
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "wallType":
+			out.Values[i] = ec._Wall_wallType(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4966,7 +5368,7 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	res := graphql.MarshalBoolean(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
 	return res
@@ -4982,7 +5384,7 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 	res := graphql.MarshalFloatContext(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
 	return graphql.WrapContextMarshaler(ctx, res)
@@ -4991,7 +5393,7 @@ func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.S
 func (ec *executionContext) marshalNGeometry2ᚖServerBTIᚋgraphᚋmodelᚐGeometry(ctx context.Context, sel ast.SelectionSet, v *model.Geometry) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5013,7 +5415,7 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	res := graphql.MarshalID(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
 	return res
@@ -5022,7 +5424,7 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 func (ec *executionContext) marshalNPlan2ᚖServerBTIᚋgraphᚋmodelᚐPlan(ctx context.Context, sel ast.SelectionSet, v *model.Plan) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5041,7 +5443,7 @@ func (ec *executionContext) marshalNPlanningProject2ServerBTIᚋgraphᚋmodelᚐ
 func (ec *executionContext) marshalNPlanningProject2ᚖServerBTIᚋgraphᚋmodelᚐPlanningProject(ctx context.Context, sel ast.SelectionSet, v *model.PlanningProject) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5105,7 +5507,7 @@ func (ec *executionContext) marshalNRoom2ᚕᚖServerBTIᚋgraphᚋmodelᚐRoom�
 func (ec *executionContext) marshalNRoom2ᚖServerBTIᚋgraphᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v *model.Room) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5142,7 +5544,7 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
 	return res
@@ -5155,7 +5557,7 @@ func (ec *executionContext) marshalNUser2ServerBTIᚋgraphᚋmodelᚐUser(ctx co
 func (ec *executionContext) marshalNUser2ᚖServerBTIᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5209,7 +5611,7 @@ func (ec *executionContext) marshalNVertex2ᚕᚖServerBTIᚋgraphᚋmodelᚐVer
 func (ec *executionContext) marshalNVertex2ᚖServerBTIᚋgraphᚋmodelᚐVertex(ctx context.Context, sel ast.SelectionSet, v *model.Vertex) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5283,7 +5685,7 @@ func (ec *executionContext) marshalNWall2ᚕᚖServerBTIᚋgraphᚋmodelᚐWall�
 func (ec *executionContext) marshalNWall2ᚖServerBTIᚋgraphᚋmodelᚐWall(ctx context.Context, sel ast.SelectionSet, v *model.Wall) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5293,7 +5695,7 @@ func (ec *executionContext) marshalNWall2ᚖServerBTIᚋgraphᚋmodelᚐWall(ctx
 func (ec *executionContext) marshalNWallEnd2ᚖServerBTIᚋgraphᚋmodelᚐWallEnd(ctx context.Context, sel ast.SelectionSet, v *model.WallEnd) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5383,7 +5785,7 @@ func (ec *executionContext) marshalN__DirectiveLocation2string(ctx context.Conte
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
 	return res
@@ -5555,7 +5957,7 @@ func (ec *executionContext) marshalN__Type2ᚕgithubᚗcomᚋ99designsᚋgqlgen�
 func (ec *executionContext) marshalN__Type2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐType(ctx context.Context, sel ast.SelectionSet, v *introspection.Type) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 		return graphql.Null
 	}
@@ -5572,7 +5974,7 @@ func (ec *executionContext) marshalN__TypeKind2string(ctx context.Context, sel a
 	res := graphql.MarshalString(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
 		}
 	}
 	return res
@@ -5639,6 +6041,21 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 	_ = ctx
 	res := graphql.MarshalID(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOPlanFile2ᚖServerBTIᚋgraphᚋmodelᚐPlanFile(ctx context.Context, sel ast.SelectionSet, v *model.PlanFile) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._PlanFile(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOPlanFileInput2ᚖServerBTIᚋgraphᚋmodelᚐPlanFileInput(ctx context.Context, v any) (*model.PlanFileInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputPlanFileInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
