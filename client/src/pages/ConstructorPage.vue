@@ -268,12 +268,19 @@ const onCanvasClick = (e) => {
   if (mode.value === 'select') {
     const w = nearestWall(pt)
     if (w) {
-      if (w.loadBearing) { w.loadBearing = false; w.wallType = 'перегородка' } else { w.loadBearing = true; w.wallType = 'несущая' }
+      // Переключаем тип стены и нормализуем
+      const newLoadBearing = !w.loadBearing
+      walls.value = walls.value.map(wall => {
+        if (wall.id === w.id) {
+          return normalizeWall({ ...wall, loadBearing: newLoadBearing })
+        }
+        return wall
+      })
     }
   } else if (mode.value === 'addWall') {
     const s = snap(pt)
     if (!addingWall.value) { addingWall.value = { start: s } } else {
-      const nw = { id: `W${Date.now()}`, start: addingWall.value.start, end: s, loadBearing: false, thickness: 0.12, wallType: 'перегородка' }
+      const nw = normalizeWall({ id: `W${Date.now()}`, start: addingWall.value.start, end: s, loadBearing: false, thickness: 0.12, wallType: 'перегородка' })
       walls.value = [...walls.value, nw]
       addingWall.value = null
     }
@@ -285,11 +292,44 @@ const onCanvasClick = (e) => {
 
 const draw = () => {
   const c = canvas2d.value
-  if (!c) return
-  if (!attachedProject.value) { requestAnimationFrame(draw); return }
+  if (!c) {
+    // Канвас еще не создан, продолжаем попытки
+    requestAnimationFrame(draw)
+    return
+  }
+  
   const parent = c.parentElement
+  if (!parent) {
+    requestAnimationFrame(draw)
+    return
+  }
+  
   const wCSS = parent.clientWidth
   const hCSS = parent.clientHeight
+  
+  if (wCSS === 0 || hCSS === 0) {
+    // Родитель еще не имеет размеров
+    requestAnimationFrame(draw)
+    return
+  }
+  
+  // Если проект не прикреплен, все равно рисуем пустой канвас
+  if (!attachedProject.value) {
+    const needResize = c.width !== Math.floor(wCSS * dpr) || c.height !== Math.floor(hCSS * dpr)
+    if (needResize) {
+      c.width = Math.floor(wCSS * dpr)
+      c.height = Math.floor(hCSS * dpr)
+      c.style.width = wCSS + 'px'
+      c.style.height = hCSS + 'px'
+    }
+    const ctx = c.getContext('2d')
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+    ctx.clearRect(0, 0, wCSS, hCSS)
+    ctx.fillStyle = '#0f1324'
+    ctx.fillRect(0, 0, wCSS, hCSS)
+    requestAnimationFrame(draw)
+    return
+  }
   const needResize = c.width !== Math.floor(wCSS * dpr) || c.height !== Math.floor(hCSS * dpr)
   if (needResize) { c.width = Math.floor(wCSS * dpr); c.height = Math.floor(hCSS * dpr); c.style.width = wCSS + 'px'; c.style.height = hCSS + 'px' }
   const ctx = c.getContext('2d')
@@ -386,7 +426,15 @@ const openAttach = async () => {
     } catch {}
     const data = await graphqlRequest(GET_USER_PROJECTS_QUERY, { user_id: String(userId) })
     const projects = Array.isArray(data?.getUserProjects) ? data.getUserProjects : []
-    try { console.log('[Attach] userId=', userId, 'filter=legal', 'projects count=', projects.length, 'statuses=', projects.map(p=>p.status)) } catch {}
+    console.log('[Attach] userId=', userId, 'filter=legal', 'projects count=', projects.length)
+    console.log('[Attach] Projects data:', projects.map(p => ({
+      id: p.id,
+      status: p.status,
+      wallsCount: p.walls?.length || 0,
+      roomsCount: p.geometry?.rooms?.length || 0,
+      hasWalls: !!p.walls,
+      hasGeometry: !!p.geometry
+    })))
     availableProjects.value = projects
   } catch (e) {
     console.warn('Не удалось загрузить проекты пользователя:', e)
@@ -409,15 +457,68 @@ const isAttachableStatus = (st) => {
 
 const isAttachable = (p) => isAttachableStatus(p?.status)
 
+// Нормализует тип стены и синхронизирует с loadBearing
+const normalizeWall = (wall) => {
+  if (!wall) return null
+  
+  // Нормализуем wallType
+  let normalizedType = String(wall.wallType || '').toLowerCase().trim()
+  
+  // Если wallType содержит "несущ" - это несущая стена
+  const isLoadBearingFromType = normalizedType.includes('несущ') || normalizedType.includes('bearing')
+  
+  // Определяем loadBearing: приоритет у явного значения, иначе из wallType
+  const loadBearing = wall.loadBearing !== undefined 
+    ? Boolean(wall.loadBearing) 
+    : isLoadBearingFromType
+  
+  // Нормализуем wallType на основе loadBearing
+  if (loadBearing) {
+    normalizedType = 'несущая'
+  } else {
+    normalizedType = 'перегородка'
+  }
+  
+  return {
+    ...wall,
+    loadBearing,
+    wallType: normalizedType
+  }
+}
+
 const attachSelected = () => {
   const p = availableProjects.value.find((x) => String(x.id) === String(selectedProjectId.value))
-  if (!p || !isAttachable(p)) return
+  if (!p || !isAttachable(p)) {
+    console.warn('[Constructor] Project not attachable:', p?.id, p?.status)
+    return
+  }
+  
+  console.log('[Constructor] Attaching project:', p.id, 'walls:', p.walls?.length, 'rooms:', p.geometry?.rooms?.length)
+  
   attachedProject.value = p
   geometry.value = p.geometry || { rooms: [] }
-  walls.value = p.walls || []
+  const initialWalls = Array.isArray(p.walls) ? p.walls : []
+  
+  // Нормализуем стены при загрузке
+  if (initialWalls.length) {
+    walls.value = initialWalls.map(normalizeWall).filter(w => w !== null)
+    console.log('[Constructor] Normalized walls:', walls.value.length)
+  } else {
+    walls.value = buildWallsFromGeometry(p.geometry)
+    console.log('[Constructor] Built walls from geometry:', walls.value.length)
+  }
+  
   isSelecting.value = false
   selectedProjectId.value = null
-  setTimeout(() => fitViewToProject(), 0)
+  
+  // Убеждаемся, что канвас перерисуется
+  setTimeout(() => {
+    fitViewToProject()
+    // Принудительно запускаем перерисовку
+    if (canvas2d.value) {
+      draw()
+    }
+  }, 100)
 }
 
 const cancelSelecting = () => { isSelecting.value = false; selectedProjectId.value = null }
@@ -425,7 +526,21 @@ const changeAttachment = () => { attachedProject.value = null; isSelecting.value
 
 watch([geometry, walls], () => { if (unityConnected.value) sendGeometryToUnity() })
 
-onMounted(() => { draw() })
+// Отслеживаем изменения attachedProject для перерисовки
+watch(attachedProject, (newVal) => {
+  console.log('[Constructor] attachedProject changed:', newVal ? `Project ${newVal.id}` : 'null')
+  if (newVal && canvas2d.value) {
+    setTimeout(() => {
+      fitViewToProject()
+      draw()
+    }, 50)
+  }
+})
+
+onMounted(() => {
+  console.log('[Constructor] Component mounted, starting draw loop')
+  draw()
+})
 
 const fitViewToProject = () => {
   const c = canvas2d.value
@@ -458,6 +573,28 @@ const fitViewToProject = () => {
   view.x = wCSS / 2 - cx * view.scale
   view.y = hCSS / 2 - cy * view.scale
 }
+
+const buildWallsFromGeometry = (geom) => {
+  const out = []
+  if (!geom || !Array.isArray(geom.rooms)) return out
+  for (const room of geom.rooms) {
+    const verts = Array.isArray(room.vertices) ? room.vertices : []
+    for (let i = 0; i < verts.length; i++) {
+      const a = verts[i]
+      const b = verts[(i + 1) % verts.length]
+      out.push({ id: `G${room.id || 'R'}_${i}`, start: { x: a.x, y: a.y }, end: { x: b.x, y: b.y }, loadBearing: false, thickness: 0.12, wallType: 'перегородка' })
+    }
+  }
+  return out
+}
+
+watch(selectedProjectId, (val) => {
+  console.log('[Constructor] selectedProjectId changed:', val)
+  if (val) {
+    console.log('[Constructor] Auto-attaching project:', val)
+    attachSelected()
+  }
+})
 </script>
 
 <style scoped>
