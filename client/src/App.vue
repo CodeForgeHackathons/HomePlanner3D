@@ -1,3 +1,36 @@
+const USER_ID_STORAGE_KEY = 'homeplanner3d:userId';
+
+const saveUserId = (id) => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage && id) {
+      window.localStorage.setItem(USER_ID_STORAGE_KEY, String(id));
+    }
+  } catch {
+    // ignore storage issues
+  }
+};
+
+const getStoredUserId = () => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return window.localStorage.getItem(USER_ID_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
+const clearStoredUserId = () => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(USER_ID_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+};
+
 <template>
   <div class="page">
     <header class="hero">
@@ -514,13 +547,17 @@
 
           <form class="account__form" @submit.prevent="handleAuthSubmit">
             <label>
-              Логин
+              ID пользователя / логин
               <input
                 v-model="authForm.login"
                 type="text"
                 autocomplete="username"
+                placeholder="Например, 1"
                 required
               />
+              <small class="account__hint">
+                Временно используем ID пользователя из API getUser(id: ID!)
+              </small>
             </label>
             <label>
               Пароль
@@ -814,62 +851,57 @@ const handleGenerate = () => {
 };
 
 // GraphQL-операции для Users (локально, чтобы не тащить их в общий клиент)
-const LOGIN_MUTATION = `
-  mutation Login($input: LoginInput!) {
-    login(input: $input) {
-      token
-      user {
-        id
-        login
-        username
-        email
-        birthday
-      }
-    }
-  }
-`;
-
 const REGISTER_MUTATION = `
   mutation Register($input: RegisterInput!) {
     register(input: $input) {
-      token
-      user {
-        id
-        login
-        username
-        email
-        birthday
-      }
-    }
-  }
-`;
-
-const ME_QUERY = `
-  query Me {
-    me {
       id
+      email
       login
       username
-      email
       birthday
     }
   }
 `;
 
-const saveAuthToken = (token) => {
+const GET_USER_QUERY = `
+  query GetUser($id: ID!) {
+    getUser(id: $id) {
+      id
+      email
+      login
+      username
+      birthday
+    }
+  }
+`;
+
+const USER_ID_STORAGE_KEY = 'homeplanner3d:userId';
+
+const saveUserId = (id) => {
   try {
-    if (typeof window !== 'undefined' && window.localStorage && token) {
-      window.localStorage.setItem('authToken', token);
+    if (typeof window !== 'undefined' && window.localStorage && id) {
+      window.localStorage.setItem(USER_ID_STORAGE_KEY, String(id));
     }
   } catch {
-    // игнорируем ошибки доступа к localStorage
+    // ignore storage errors
   }
 };
 
-const clearAuthToken = () => {
+const getStoredUserId = () => {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
-      window.localStorage.removeItem('authToken');
+      return window.localStorage.getItem(USER_ID_STORAGE_KEY);
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+};
+
+const clearStoredUserId = () => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      window.localStorage.removeItem(USER_ID_STORAGE_KEY);
     }
   } catch {
     // ignore
@@ -877,10 +909,18 @@ const clearAuthToken = () => {
 };
 
 const fetchCurrentUser = async () => {
+  const storedId = getStoredUserId();
+  if (!storedId) {
+    currentUser.value = null;
+    return;
+  }
+
   try {
-    const data = await graphqlRequest(ME_QUERY);
-    if (data && data.me) {
-      currentUser.value = data.me;
+    const data = await graphqlRequest(GET_USER_QUERY, { id: storedId });
+    if (data && data.getUser) {
+      currentUser.value = data.getUser;
+    } else {
+      currentUser.value = null;
     }
   } catch (error) {
     console.warn('Не удалось получить текущего пользователя:', error);
@@ -892,29 +932,43 @@ const handleAuthSubmit = async () => {
   authError.value = '';
   authLoading.value = true;
 
-  const input = {
-    login: authForm.login,
-    password: authForm.password,
-  };
-
-  if (authMode.value === 'register') {
-    input.username = authForm.username || null;
-    input.email = authForm.email || null;
-    input.birthday = authForm.birthday || null;
-  }
-
   try {
-    const mutation = authMode.value === 'login' ? LOGIN_MUTATION : REGISTER_MUTATION;
-    const result = await graphqlRequest(mutation, { input });
+    if (authMode.value === 'register') {
+      const input = {
+        email: authForm.email,
+        login: authForm.login,
+        username: authForm.username || null,
+        password: authForm.password,
+        birthday: authForm.birthday || null,
+      };
 
-    const payloadRoot = authMode.value === 'login' ? result?.login : result?.register;
-    if (!payloadRoot || !payloadRoot.token || !payloadRoot.user) {
-      authError.value = 'Не удалось выполнить операцию. Проверьте данные и попробуйте ещё раз.';
-      return;
+      const result = await graphqlRequest(REGISTER_MUTATION, { input });
+      const userData = result?.register;
+
+      if (!userData) {
+        authError.value = 'Регистрация не удалась. Проверьте данные и попробуйте снова.';
+        return;
+      }
+
+      currentUser.value = userData;
+      saveUserId(userData.id);
+    } else {
+      if (!authForm.login) {
+        authError.value = 'Укажите ID пользователя для входа.';
+        return;
+      }
+
+      const result = await graphqlRequest(GET_USER_QUERY, { id: authForm.login });
+      const userData = result?.getUser;
+
+      if (!userData) {
+        authError.value = 'Пользователь не найден.';
+        return;
+      }
+
+      currentUser.value = userData;
+      saveUserId(userData.id);
     }
-
-    saveAuthToken(payloadRoot.token);
-    currentUser.value = payloadRoot.user;
   } catch (error) {
     console.error('Ошибка аутентификации:', error);
     authError.value = error.message || 'Ошибка входа. Попробуйте ещё раз.';
@@ -924,7 +978,7 @@ const handleAuthSubmit = async () => {
 };
 
 const logout = () => {
-  clearAuthToken();
+  clearStoredUserId();
   currentUser.value = null;
 };
 
