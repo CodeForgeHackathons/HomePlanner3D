@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>HomePlanner3D - Конструктор планировки квартир</title>
 
-    <!-- Unity WebGL Loader -->
-    <script src="/public/Build3D/Build/Build3D.loader.js"></script>
+    <!-- Unity WebGL Loader для старых версий Unity -->
+    <script src="/Build3D/Build/Build3D.loader.js"></script>
 
     <style>
       /* Стили для Unity контейнера */
@@ -121,11 +121,12 @@
 
         overlay.style.display = 'flex';
 
+        // Для старых версий Unity (до 2020) используем UnityLoader
         if (typeof UnityLoader !== 'undefined') {
           try {
             unityInstance = UnityLoader.instantiate(
               "unityContainer",
-              "/Build3D/Build3D.json",
+              "/Build3D/Build/Build3D.json",
               {
                 onProgress: (unityInstance, progress) => {
                   const percentage = Math.round(progress * 100);
