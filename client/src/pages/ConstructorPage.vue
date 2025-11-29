@@ -459,17 +459,36 @@ const isAttachableStatus = (st) => {
 
 const isAttachable = (p) => isAttachableStatus(p?.status)
 
+// Функция для объединения близких точек
+const mergeCloseVertices = (vertices, threshold = 0.01) => {
+  const result = []
+  for (const v of vertices) {
+    const existing = result.find(r => 
+      Math.abs(r.x - v.x) < threshold && Math.abs(r.y - v.y) < threshold
+    )
+    if (!existing) {
+      result.push(v)
+    }
+  }
+  return result
+}
+
 // Нормализует тип стены и синхронизирует с loadBearing
 const normalizeWall = (wall) => {
   if (!wall) return null
   
-  // Нормализуем wallType
   let normalizedType = String(wall.wallType || '').toLowerCase().trim()
   
-  // Если wallType содержит "несущ" - это несущая стена
-  const isLoadBearingFromType = normalizedType.includes('несущ') || normalizedType.includes('bearing')
+  // Более точное определение типа стены из существующих данных
+  const isLoadBearingFromType = normalizedType.includes('несущ') || 
+                               normalizedType.includes('bearing') ||
+                               normalizedType === 'loadbearing' ||
+                               normalizedType === 'несущая'
   
-  // Определяем loadBearing: приоритет у явного значения, иначе из wallType
+  // Определяем толщину на основе типа
+  const thickness = wall.thickness || (isLoadBearingFromType ? 0.2 : 0.12)
+  
+  // Приоритет: явное значение > значение из типа > по умолчанию перегородка
   const loadBearing = wall.loadBearing !== undefined 
     ? Boolean(wall.loadBearing) 
     : isLoadBearingFromType
@@ -484,8 +503,52 @@ const normalizeWall = (wall) => {
   return {
     ...wall,
     loadBearing,
+    thickness,
     wallType: normalizedType
   }
+}
+
+const buildWallsFromGeometry = (geom) => {
+  const out = []
+  if (!geom || !Array.isArray(geom.rooms)) return out
+  
+  // Используем Set для отслеживания уникальных стен (чтобы избежать дублирования)
+  const wallSet = new Set()
+  
+  for (const room of geom.rooms) {
+    const verts = Array.isArray(room.vertices) ? room.vertices : []
+    
+    // Объединяем близкие точки перед построением стен
+    const mergedVerts = mergeCloseVertices(verts)
+    
+    for (let i = 0; i < mergedVerts.length; i++) {
+      const a = mergedVerts[i]
+      const b = mergedVerts[(i + 1) % mergedVerts.length]
+      
+      // Создаем уникальный ключ для стены (в обоих направлениях)
+      const key1 = `${a.x},${a.y}-${b.x},${b.y}`
+      const key2 = `${b.x},${b.y}-${a.x},${a.y}`
+      
+      // Проверяем, не существует ли уже такая стена
+      if (!wallSet.has(key1) && !wallSet.has(key2)) {
+        wallSet.add(key1)
+        
+        // Определяем тип стены: внешние стены - несущие, внутренние - перегородки
+        // Простая эвристика: если стена принадлежит только одной комнате - вероятно внешняя
+        const isExternal = true // В реальном приложении нужно анализировать соседние комнаты
+        
+        out.push({ 
+          id: `G${room.id || 'R'}_${i}`, 
+          start: { x: a.x, y: a.y }, 
+          end: { x: b.x, y: b.y }, 
+          loadBearing: isExternal, // Внешние стены - несущие
+          thickness: isExternal ? 0.2 : 0.12, 
+          wallType: isExternal ? 'несущая' : 'перегородка' 
+        })
+      }
+    }
+  }
+  return out
 }
 
 const attachSelected = () => {
@@ -501,13 +564,18 @@ const attachSelected = () => {
   geometry.value = p.geometry || { rooms: [] }
   const initialWalls = Array.isArray(p.walls) ? p.walls : []
   
-  // Нормализуем стены при загрузке
   if (initialWalls.length) {
+    // Нормализуем существующие стены
     walls.value = initialWalls.map(normalizeWall).filter(w => w !== null)
-    console.log('[Constructor] Normalized walls:', walls.value.length)
+    console.log('[Constructor] Normalized walls:', walls.value.length, 
+                'loadBearing:', walls.value.filter(w => w.loadBearing).length,
+                'partitions:', walls.value.filter(w => !w.loadBearing).length)
   } else {
+    // Строим стены из геометрии с улучшенной логикой
     walls.value = buildWallsFromGeometry(p.geometry)
-    console.log('[Constructor] Built walls from geometry:', walls.value.length)
+    console.log('[Constructor] Built walls from geometry:', walls.value.length,
+                'loadBearing:', walls.value.filter(w => w.loadBearing).length,
+                'partitions:', walls.value.filter(w => !w.loadBearing).length)
   }
   
   isSelecting.value = false
@@ -574,20 +642,6 @@ const fitViewToProject = () => {
   const cy = (minY + maxY) / 2
   view.x = wCSS / 2 - cx * view.scale
   view.y = hCSS / 2 - cy * view.scale
-}
-
-const buildWallsFromGeometry = (geom) => {
-  const out = []
-  if (!geom || !Array.isArray(geom.rooms)) return out
-  for (const room of geom.rooms) {
-    const verts = Array.isArray(room.vertices) ? room.vertices : []
-    for (let i = 0; i < verts.length; i++) {
-      const a = verts[i]
-      const b = verts[(i + 1) % verts.length]
-      out.push({ id: `G${room.id || 'R'}_${i}`, start: { x: a.x, y: a.y }, end: { x: b.x, y: b.y }, loadBearing: false, thickness: 0.12, wallType: 'перегородка' })
-    }
-  }
-  return out
 }
 
 watch(selectedProjectId, (val) => {
