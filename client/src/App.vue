@@ -4,9 +4,6 @@
       <div class="hero__topbar">
         <span class="hero__logo"></span>
         <div class="hero__top-actions">
-          <span v-if="currentUser" class="hero__user">
-            {{ currentUser.username || currentUser.login }}
-          </span>
           <button
             type="button"
             class="btn btn--ghost btn--small hero__login-btn"
@@ -2027,6 +2024,7 @@ const downloadGuide = () => {
   padding: 32px 64px 96px;
   max-width: 1200px;
   margin: 0 auto;
+  overflow-x: hidden;
 }
 
 h1,
