@@ -29,7 +29,6 @@
         <div class="hero__actions">
           <button class="btn btn--primary" @click="scrollToIntake">Загрузить план</button>
           <button class="btn btn--ghost" @click="scrollToGallery">Посмотреть примеры</button>
-          <button class="btn btn--ghost" @click="goToConstructor">Открыть конструктор</button>
         </div>
       </div>
       <div class="hero__visual">
@@ -337,6 +336,21 @@
           <h3>{{ mode.title }}</h3>
           <p>{{ mode.description }}</p>
         </article>
+      </div>
+    </section>
+
+    <section class="editor-cta">
+      <div class="editor-cta__card">
+        <div class="editor-cta__text">
+          <h2>Игровой редактор планировки</h2>
+          <p>
+            Визуальный конструктор показывает 2D‑план и 3D‑вид. Можно сносить и добавлять стены,
+            редактировать помещения и смотреть результат от первого лица.
+          </p>
+        </div>
+        <div class="editor-cta__actions">
+          <button class="btn btn--primary" @click="goToConstructor">Открыть редактор</button>
+        </div>
       </div>
     </section>
 
@@ -3037,4 +3051,11 @@ section {
     gap: 12px;
   }
 }
+
+.editor-cta { margin: 20px auto 60px; max-width: 1100px; padding: 0 16px; }
+.editor-cta__card { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; align-items: center; padding: 24px; border-radius: 24px; background: linear-gradient(135deg, rgba(47,93,255,0.18), rgba(32,201,151,0.12)); border: 1px solid rgba(255,255,255,0.12); }
+.editor-cta__text h2 { margin: 0 0 8px; }
+.editor-cta__text p { margin: 0; color: #c7cbe0; }
+.editor-cta__actions { display: flex; justify-content: flex-end; }
+@media (max-width: 768px) { .editor-cta__card { grid-template-columns: 1fr; } .editor-cta__actions { justify-content: flex-start; } }
 </style>

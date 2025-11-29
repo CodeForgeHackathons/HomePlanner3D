@@ -20,12 +20,36 @@
           <button :class="['chip', mode === 'moveWall' && 'chip--active']" @click="setMode('moveWall')">Переместить стену</button>
           <button :class="['chip', mode === 'furniture' && 'chip--active']" @click="setMode('furniture')">Мебель</button>
           <span class="constructor__spacer"></span>
-          <button class="chip" @click="resetView">Сброс вида</button>
+          <button class="chip" @click="resetView" :disabled="!attachedProject">Сброс вида</button>
+          <button class="chip" @click="openAttach" v-if="!attachedProject">Прикрепить проект</button>
+          <button class="chip" @click="changeAttachment" v-else>Сменить проект</button>
         </div>
-        <div class="constructor__canvas-wrap" @wheel.prevent="onWheel" @mousedown="onPointerDown" @mousemove="onPointerMove" @mouseup="onPointerUp" @mouseleave="onPointerUp" @click="onCanvasClick">
+        <div v-if="attachedProject" class="constructor__canvas-wrap" @wheel.prevent="onWheel" @mousedown="onPointerDown" @mousemove="onPointerMove" @mouseup="onPointerUp" @mouseleave="onPointerUp" @click="onCanvasClick">
           <canvas ref="canvas2d"></canvas>
         </div>
-        <div class="constructor__legend">
+        <div v-else class="attach__wrap">
+          <div class="attach__card">
+            <h3>Прикрепить проект</h3>
+            <p>Выберите один из ваших проектов, чтобы открыть его в редакторе.</p>
+            <div class="attach__actions">
+              <button class="btn btn--primary" @click="openAttach" :disabled="isAttachLoading">{{ isAttachLoading ? 'Загрузка…' : 'Выбрать проект' }}</button>
+            </div>
+            <div v-if="isSelecting" class="attach__list">
+              <label v-for="p in availableProjects" :key="p.id" class="attach__item">
+                <input type="radio" v-model="selectedProjectId" :value="p.id" />
+                <div class="attach__meta">
+                  <strong>Проект #{{ p.id }}</strong>
+                  <small>{{ p.plan.address }} · {{ p.plan.area }} м²</small>
+                </div>
+              </label>
+              <div class="attach__actions">
+                <button class="btn btn--ghost btn--small" @click="cancelSelecting">Отмена</button>
+                <button class="btn btn--primary btn--small" @click="attachSelected" :disabled="!selectedProjectId">Прикрепить</button>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div v-if="attachedProject" class="constructor__legend">
           <span class="legend legend--load">Несущая</span>
           <span class="legend legend--part">Перегородка</span>
         </div>
@@ -77,7 +101,14 @@ const walls = ref(
   ])
 )
 
-const view = reactive({ x: 0, y: 0, scale: 60, dragging: false, lastX: 0, lastY: 0 })
+const attachedProject = ref(null)
+const availableProjects = ref([])
+const isSelecting = ref(false)
+const isAttachLoading = ref(false)
+const selectedProjectId = ref(null)
+
+const view = reactive({ x: 0, y: 0, scale: 70, dragging: false, lastX: 0, lastY: 0 })
+const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? Math.max(1, window.devicePixelRatio) : 1
 
 const canvasSize = computed(() => ({ w: 0, h: 0 }))
 
@@ -87,6 +118,7 @@ const resetView = () => { view.x = 0; view.y = 0; view.scale = 60 }
 
 const worldToScreen = (x, y) => ({ sx: x * view.scale + view.x, sy: y * view.scale + view.y })
 const screenToWorld = (sx, sy) => ({ x: (sx - view.x) / view.scale, y: (sy - view.y) / view.scale })
+const snap = (pt, step = 0.1) => ({ x: Math.round(pt.x / step) * step, y: Math.round(pt.y / step) * step })
 
 const onWheel = (e) => {
   const delta = Math.sign(e.deltaY)
@@ -142,8 +174,9 @@ const onCanvasClick = (e) => {
       if (w.loadBearing) { w.loadBearing = false; w.wallType = 'перегородка' } else { w.loadBearing = true; w.wallType = 'несущая' }
     }
   } else if (mode.value === 'addWall') {
-    if (!addingWall.value) { addingWall.value = { start: pt } } else {
-      const nw = { id: `W${Date.now()}`, start: addingWall.value.start, end: pt, loadBearing: false, thickness: 0.12, wallType: 'перегородка' }
+    const s = snap(pt)
+    if (!addingWall.value) { addingWall.value = { start: s } } else {
+      const nw = { id: `W${Date.now()}`, start: addingWall.value.start, end: s, loadBearing: false, thickness: 0.12, wallType: 'перегородка' }
       walls.value = [...walls.value, nw]
       addingWall.value = null
     }
@@ -156,24 +189,33 @@ const onCanvasClick = (e) => {
 const draw = () => {
   const c = canvas2d.value
   if (!c) return
+  if (!attachedProject.value) { requestAnimationFrame(draw); return }
   const parent = c.parentElement
-  const w = parent.clientWidth
-  const h = parent.clientHeight
-  if (c.width !== w || c.height !== h) { c.width = w; c.height = h }
+  const wCSS = parent.clientWidth
+  const hCSS = parent.clientHeight
+  const needResize = c.width !== Math.floor(wCSS * dpr) || c.height !== Math.floor(hCSS * dpr)
+  if (needResize) { c.width = Math.floor(wCSS * dpr); c.height = Math.floor(hCSS * dpr); c.style.width = wCSS + 'px'; c.style.height = hCSS + 'px' }
   const ctx = c.getContext('2d')
-  ctx.clearRect(0, 0, w, h)
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
+  ctx.clearRect(0, 0, wCSS, hCSS)
   ctx.fillStyle = '#0f1324'
-  ctx.fillRect(0, 0, w, h)
+  ctx.fillRect(0, 0, wCSS, hCSS)
 
   ctx.strokeStyle = '#1f2540'
   ctx.lineWidth = 1
-  for (let gx = ((-view.x / view.scale) | 0) - 1; gx < ((w - view.x) / view.scale) + 1; gx++) {
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+  const gxStart = Math.floor((-view.x / view.scale)) - 1
+  const gxEnd = Math.ceil(((wCSS - view.x) / view.scale)) + 1
+  for (let gx = gxStart; gx < gxEnd; gx++) {
     const sx = gx * view.scale + view.x
-    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, h); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(sx, 0); ctx.lineTo(sx, hCSS); ctx.stroke()
   }
-  for (let gy = ((-view.y / view.scale) | 0) - 1; gy < ((h - view.y) / view.scale) + 1; gy++) {
+  const gyStart = Math.floor((-view.y / view.scale)) - 1
+  const gyEnd = Math.ceil(((hCSS - view.y) / view.scale)) + 1
+  for (let gy = gyStart; gy < gyEnd; gy++) {
     const sy = gy * view.scale + view.y
-    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(w, sy); ctx.stroke()
+    ctx.beginPath(); ctx.moveTo(0, sy); ctx.lineTo(wCSS, sy); ctx.stroke()
   }
 
   for (const room of geometry.value.rooms || []) {
@@ -197,7 +239,7 @@ const draw = () => {
     const a = worldToScreen(wline.start.x, wline.start.y)
     const b = worldToScreen(wline.end.x, wline.end.y)
     ctx.beginPath(); ctx.moveTo(a.sx, a.sy); ctx.lineTo(b.sx, b.sy)
-    ctx.lineWidth = Math.max(2, wline.thickness * view.scale)
+    ctx.lineWidth = Math.max(3, wline.thickness * view.scale)
     ctx.strokeStyle = wline.loadBearing ? '#7dff8e' : '#e9ecf8'
     ctx.stroke()
   }
@@ -234,3 +276,33 @@ onMounted(() => { draw() })
 @media (max-width: 1024px) { .constructor__grid { grid-template-columns: 1fr; } .constructor__canvas-wrap, .unity__host { height: 440px; } }
 @media (max-width: 480px) { .constructor__header { border-radius: 20px; padding: 20px; } .constructor__panel { border-radius: 16px; } }
 </style>
+const openAttach = async () => {
+  isAttachLoading.value = true
+  await new Promise((r) => setTimeout(r, 400))
+  availableProjects.value = [
+    { id: 101, plan: { address: 'Москва, ул. Примерная, д. 1', area: 50.9 }, geometry: { rooms: [{ id: 'R1', name: 'Гостиная', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 5.2, y: 0 }, { x: 5.2, y: 4.1 }, { x: 0, y: 4.1 }] }] }, walls: [{ id: 'W1', start: { x: 0, y: 0 }, end: { x: 5.2, y: 0 }, loadBearing: true, thickness: 0.2, wallType: 'несущая' }] },
+    { id: 102, plan: { address: 'СПб, пр. Тестовый, д. 7', area: 68.0 }, geometry: { rooms: [{ id: 'R1', name: 'Кухня', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 3.6, y: 0 }, { x: 3.6, y: 3.0 }, { x: 0, y: 3.0 }] }] }, walls: [{ id: 'W1', start: { x: 3.6, y: 0 }, end: { x: 3.6, y: 3.0 }, loadBearing: false, thickness: 0.12, wallType: 'перегородка' }] },
+    { id: 103, plan: { address: 'Казань, ул. Образцовая, д. 3', area: 42.3 }, geometry: { rooms: [{ id: 'R1', name: 'Спальня', height: 2.7, vertices: [{ x: 0, y: 0 }, { x: 4.2, y: 0 }, { x: 4.2, y: 3.2 }, { x: 0, y: 3.2 }] }] }, walls: [{ id: 'W1', start: { x: 0, y: 3.2 }, end: { x: 4.2, y: 3.2 }, loadBearing: true, thickness: 0.2, wallType: 'несущая' }] },
+  ]
+  isAttachLoading.value = false
+  isSelecting.value = true
+}
+
+const attachSelected = () => {
+  const p = availableProjects.value.find((x) => String(x.id) === String(selectedProjectId.value))
+  if (!p) return
+  attachedProject.value = p
+  geometry.value = p.geometry || { rooms: [] }
+  walls.value = p.walls || []
+  isSelecting.value = false
+  selectedProjectId.value = null
+}
+
+const cancelSelecting = () => { isSelecting.value = false; selectedProjectId.value = null }
+const changeAttachment = () => { attachedProject.value = null; isSelecting.value = false; selectedProjectId.value = null }
+.attach__wrap { position: relative; height: 520px; display: grid; place-items: center; }
+.attach__card { width: 100%; max-width: 560px; padding: 20px; border-radius: 18px; background: #151826; border: 1px solid rgba(255,255,255,0.08); display: grid; gap: 12px; }
+.attach__actions { display: flex; gap: 8px; justify-content: flex-end; }
+.attach__list { display: grid; gap: 10px; margin-top: 8px; }
+.attach__item { display: flex; gap: 10px; align-items: center; padding: 10px; border-radius: 12px; background: rgba(255,255,255,0.04); }
+.attach__meta { display: grid; }
