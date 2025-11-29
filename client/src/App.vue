@@ -36,8 +36,14 @@
           <h3>Сценарий «Семейная 70 м²»</h3>
           <p>+1 спальня · +15% естественного света</p>
           <div class="visual-card__plan">
-            <span>До</span>
-            <span>После</span>
+            <div class="visual-card__col">
+              <span>До</span>
+              <img :src="beforeImageUrl" alt="До" class="visual-card__img" loading="lazy" />
+            </div>
+            <div class="visual-card__col">
+              <span>После</span>
+              <img :src="afterImageUrl" alt="После" class="visual-card__img" loading="lazy" />
+            </div>
           </div>
         </div>
       </div>
@@ -555,6 +561,8 @@
 import { reactive, ref, onMounted } from 'vue';
 import { graphqlRequest, ASK_BTI_AGENT_MUTATION } from './utils/graphqlClient.js';
 import AccountPage from './pages/AccountPage.vue';
+import beforeImageUrl from './assets/Сценарий «Семейная 70 м²»ДО.png';
+import afterImageUrl from './assets/Сценарий «Семейная 70 м²»ПОСЛЕ.png';
 
 // API включено по умолчанию, задайте VITE_ENABLE_PROJECT_API=false чтобы отключить
 const projectApiEnabled =
@@ -1759,6 +1767,19 @@ section {
   text-transform: uppercase;
   font-size: 13px;
   text-align: center;
+}
+
+.visual-card__col {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.visual-card__img {
+  width: 100%;
+  height: auto;
+  border-radius: 12px;
+  background: #0b0d12;
 }
 
 .flow h2 {
