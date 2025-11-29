@@ -1,0 +1,207 @@
+package assistant
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"strings"
+	"time"
+)
+
+const (
+	modelURI = "gpt://b1gu5443n2mkggql04p5/yandexgpt/rc"
+	folderID = "b1gu5443n2mkggql04p5"
+	apiUrl   = "https://llm.api.cloud.yandex.net/foundationModels/v1/completion"
+)
+
+type BTIResponse struct {
+	IsValid             bool     `json:"is_valid"`
+	Decision            string   `json:"decision"`
+	Justification       string   `json:"justification"`
+	TechnicalBasis      []string `json:"technical_basis"`
+	LimitationsRisks    []string `json:"limitations_risks"`
+	ClarificationNeeded []string `json:"clarification_needed"`
+}
+
+type YandexAIRequest struct {
+	ModelURI          string            `json:"modelUri"`
+	CompletionOptions CompletionOptions `json:"completionOptions"`
+	Messages          []Message         `json:"messages"`
+}
+
+type CompletionOptions struct {
+	Temperature float32 `json:"temperature"`
+	MaxTokens   int     `json:"maxTokens"`
+}
+
+type Message struct {
+	Role string `json:"role"`
+	Text string `json:"text"`
+}
+
+type YandexAIResponse struct {
+	Result struct {
+		Alternatives []struct {
+			Message struct {
+				Text string `json:"text"`
+			} `json:"message"`
+		} `json:"alternatives"`
+	} `json:"result"`
+}
+
+func AiAnalyze(userQuestion string) (*BTIResponse, error) {
+
+	request := YandexAIRequest{
+		ModelURI: modelURI,
+		CompletionOptions: CompletionOptions{
+			Temperature: 0.3,
+			MaxTokens:   6000,
+		},
+		Messages: []Message{
+			{
+				Role: "user",
+				Text: userQuestion,
+			},
+		},
+	}
+
+	response, err := sendToYandexAI(request)
+	if err != nil {
+		return nil, err
+	}
+
+	btiResponse, err := parseAiResponse(response)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка парсинга ответа AI: %w", err)
+	}
+
+	return btiResponse, nil
+
+}
+
+func sendToYandexAI(request YandexAIRequest) (string, error) {
+	iamToken := "AQVNz9lGnH1iOytu7Nu2XfHYXDhsZOrwepr5x56k"
+
+	if iamToken == "" {
+		return "", fmt.Errorf("Api key not found")
+	}
+
+	jsonData, err := json.Marshal(request)
+	if err != nil {
+		return "", fmt.Errorf("ошибка создания JSON: %w", err)
+	}
+
+	req, err := http.NewRequest("POST", apiUrl, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return "", fmt.Errorf("ошибка создания запроса: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+iamToken)
+	req.Header.Set("X-Folder-Id", folderID)
+
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("ошибка отправки запроса: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("ошибка чтения ответа: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("ошибка API (статус %d): %s", resp.StatusCode, string(body))
+	}
+
+	var aiResponse YandexAIResponse
+	if err := json.Unmarshal(body, &aiResponse); err != nil {
+		return "", fmt.Errorf("ошибка парсинга ответа: %w", err)
+	}
+
+	if len(aiResponse.Result.Alternatives) > 0 {
+		return aiResponse.Result.Alternatives[0].Message.Text, nil
+	}
+
+	return "", fmt.Errorf("пустой ответ от AI")
+}
+func parseAiResponse(aiRawResponse string) (*BTIResponse, error) {
+	cleanedResponse := cleanAIResponse(aiRawResponse)
+
+	var btiResponse BTIResponse
+
+	if err := json.Unmarshal([]byte(cleanedResponse), &btiResponse); err != nil {
+		return createFallbackResponse(aiRawResponse), nil
+	}
+	if btiResponse.Justification == "" {
+		btiResponse.Justification = "Техническая экспертиза не предоставила обоснование"
+	}
+	if btiResponse.TechnicalBasis == nil {
+		btiResponse.TechnicalBasis = []string{}
+	}
+	if btiResponse.LimitationsRisks == nil {
+		btiResponse.LimitationsRisks = []string{}
+	}
+	if btiResponse.ClarificationNeeded == nil {
+		btiResponse.ClarificationNeeded = []string{}
+	}
+
+	return &btiResponse, nil
+}
+func cleanAIResponse(response string) string {
+	response = strings.TrimSpace(response)
+	response = strings.TrimPrefix(response, "```json")
+	response = strings.TrimSuffix(response, "```")
+	response = strings.TrimSpace(response)
+
+	start := strings.Index(response, "{")
+	end := strings.LastIndex(response, "}") + 1
+
+	if start >= 0 && end > start {
+		return response[start:end]
+	}
+
+	return response
+}
+
+func createFallbackResponse(aiRawResponse string) *BTIResponse {
+	response := &BTIResponse{
+		IsValid:             false,
+		Decision:            "нельзя",
+		Justification:       "Не удалось выполнить технический анализ",
+		TechnicalBasis:      []string{},
+		LimitationsRisks:    []string{"Требуется ручная проверка инженером"},
+		ClarificationNeeded: []string{"Необходима полная техническая документация"},
+	}
+
+	lowerResponse := strings.ToLower(aiRawResponse)
+
+	if strings.Contains(lowerResponse, "можно") && !strings.Contains(lowerResponse, "нельзя") {
+		response.IsValid = true
+		response.Decision = "можно"
+	} else if strings.Contains(lowerResponse, "нельзя") {
+		response.IsValid = false
+		response.Decision = "нельзя"
+	} else if strings.Contains(lowerResponse, "можно при условиях") {
+		response.IsValid = true
+		response.Decision = "можно при условиях"
+	}
+	if strings.Contains(aiRawResponse, "обоснование") || strings.Contains(aiRawResponse, "justification") {
+		lines := strings.Split(aiRawResponse, "\n")
+		for _, line := range lines {
+			if strings.Contains(strings.ToLower(line), "обоснование") ||
+				strings.Contains(strings.ToLower(line), "justification") {
+				parts := strings.Split(line, ":")
+				if len(parts) > 1 {
+					response.Justification = strings.TrimSpace(parts[1])
+				}
+			}
+		}
+	}
+
+	return response
+}

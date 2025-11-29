@@ -47,13 +47,52 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	Constraints struct {
+		ForbiddenMoves func(childComplexity int) int
+		RegionRules    func(childComplexity int) int
+	}
+
+	Geometry struct {
+		Rooms func(childComplexity int) int
+	}
+
 	Mutation struct {
-		AskBTIagent func(childComplexity int, input model.BtiAgent) int
-		Register    func(childComplexity int, input model.RegisterInput) int
+		CreatePlanningProject func(childComplexity int, input model.PlanningProjectInput) int
+		Register              func(childComplexity int, input model.RegisterInput) int
+	}
+
+	Plan struct {
+		Address           func(childComplexity int) int
+		Area              func(childComplexity int) int
+		CeilingHeight     func(childComplexity int) int
+		FamilyProfile     func(childComplexity int) int
+		FloorDelta        func(childComplexity int) int
+		Goal              func(childComplexity int) int
+		LayoutType        func(childComplexity int) int
+		Prompt            func(childComplexity int) int
+		RecognitionStatus func(childComplexity int) int
+		Source            func(childComplexity int) int
+	}
+
+	PlanningProject struct {
+		Constraints func(childComplexity int) int
+		CreatedAt   func(childComplexity int) int
+		Geometry    func(childComplexity int) int
+		ID          func(childComplexity int) int
+		Plan        func(childComplexity int) int
+		Status      func(childComplexity int) int
+		Walls       func(childComplexity int) int
 	}
 
 	Query struct {
 		GetUser func(childComplexity int, id string) int
+	}
+
+	Room struct {
+		Height   func(childComplexity int) int
+		ID       func(childComplexity int) int
+		Name     func(childComplexity int) int
+		Vertices func(childComplexity int) int
 	}
 
 	User struct {
@@ -63,11 +102,29 @@ type ComplexityRoot struct {
 		Login    func(childComplexity int) int
 		Username func(childComplexity int) int
 	}
+
+	Vertex struct {
+		X func(childComplexity int) int
+		Y func(childComplexity int) int
+	}
+
+	Wall struct {
+		End         func(childComplexity int) int
+		ID          func(childComplexity int) int
+		LoadBearing func(childComplexity int) int
+		Start       func(childComplexity int) int
+		Thickness   func(childComplexity int) int
+	}
+
+	WallEnd struct {
+		X func(childComplexity int) int
+		Y func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
 	Register(ctx context.Context, input model.RegisterInput) (*model.User, error)
-	AskBTIagent(ctx context.Context, input model.BtiAgent) (*string, error)
+	CreatePlanningProject(ctx context.Context, input model.PlanningProjectInput) (*model.PlanningProject, error)
 }
 type QueryResolver interface {
 	GetUser(ctx context.Context, id string) (*model.User, error)
@@ -92,17 +149,37 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 	_ = ec
 	switch typeName + "." + field {
 
-	case "Mutation.askBTIagent":
-		if e.complexity.Mutation.AskBTIagent == nil {
+	case "Constraints.forbiddenMoves":
+		if e.complexity.Constraints.ForbiddenMoves == nil {
 			break
 		}
 
-		args, err := ec.field_Mutation_askBTIagent_args(ctx, rawArgs)
+		return e.complexity.Constraints.ForbiddenMoves(childComplexity), true
+	case "Constraints.regionRules":
+		if e.complexity.Constraints.RegionRules == nil {
+			break
+		}
+
+		return e.complexity.Constraints.RegionRules(childComplexity), true
+
+	case "Geometry.rooms":
+		if e.complexity.Geometry.Rooms == nil {
+			break
+		}
+
+		return e.complexity.Geometry.Rooms(childComplexity), true
+
+	case "Mutation.createPlanningProject":
+		if e.complexity.Mutation.CreatePlanningProject == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createPlanningProject_args(ctx, rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AskBTIagent(childComplexity, args["input"].(model.BtiAgent)), true
+		return e.complexity.Mutation.CreatePlanningProject(childComplexity, args["input"].(model.PlanningProjectInput)), true
 	case "Mutation.register":
 		if e.complexity.Mutation.Register == nil {
 			break
@@ -115,6 +192,110 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.Mutation.Register(childComplexity, args["input"].(model.RegisterInput)), true
 
+	case "Plan.address":
+		if e.complexity.Plan.Address == nil {
+			break
+		}
+
+		return e.complexity.Plan.Address(childComplexity), true
+	case "Plan.area":
+		if e.complexity.Plan.Area == nil {
+			break
+		}
+
+		return e.complexity.Plan.Area(childComplexity), true
+	case "Plan.ceilingHeight":
+		if e.complexity.Plan.CeilingHeight == nil {
+			break
+		}
+
+		return e.complexity.Plan.CeilingHeight(childComplexity), true
+	case "Plan.familyProfile":
+		if e.complexity.Plan.FamilyProfile == nil {
+			break
+		}
+
+		return e.complexity.Plan.FamilyProfile(childComplexity), true
+	case "Plan.floorDelta":
+		if e.complexity.Plan.FloorDelta == nil {
+			break
+		}
+
+		return e.complexity.Plan.FloorDelta(childComplexity), true
+	case "Plan.goal":
+		if e.complexity.Plan.Goal == nil {
+			break
+		}
+
+		return e.complexity.Plan.Goal(childComplexity), true
+	case "Plan.layoutType":
+		if e.complexity.Plan.LayoutType == nil {
+			break
+		}
+
+		return e.complexity.Plan.LayoutType(childComplexity), true
+	case "Plan.prompt":
+		if e.complexity.Plan.Prompt == nil {
+			break
+		}
+
+		return e.complexity.Plan.Prompt(childComplexity), true
+	case "Plan.recognitionStatus":
+		if e.complexity.Plan.RecognitionStatus == nil {
+			break
+		}
+
+		return e.complexity.Plan.RecognitionStatus(childComplexity), true
+	case "Plan.source":
+		if e.complexity.Plan.Source == nil {
+			break
+		}
+
+		return e.complexity.Plan.Source(childComplexity), true
+
+	case "PlanningProject.constraints":
+		if e.complexity.PlanningProject.Constraints == nil {
+			break
+		}
+
+		return e.complexity.PlanningProject.Constraints(childComplexity), true
+	case "PlanningProject.createdAt":
+		if e.complexity.PlanningProject.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.PlanningProject.CreatedAt(childComplexity), true
+	case "PlanningProject.geometry":
+		if e.complexity.PlanningProject.Geometry == nil {
+			break
+		}
+
+		return e.complexity.PlanningProject.Geometry(childComplexity), true
+	case "PlanningProject.id":
+		if e.complexity.PlanningProject.ID == nil {
+			break
+		}
+
+		return e.complexity.PlanningProject.ID(childComplexity), true
+	case "PlanningProject.plan":
+		if e.complexity.PlanningProject.Plan == nil {
+			break
+		}
+
+		return e.complexity.PlanningProject.Plan(childComplexity), true
+	case "PlanningProject.status":
+		if e.complexity.PlanningProject.Status == nil {
+			break
+		}
+
+		return e.complexity.PlanningProject.Status(childComplexity), true
+	case "PlanningProject.walls":
+		if e.complexity.PlanningProject.Walls == nil {
+			break
+		}
+
+		return e.complexity.PlanningProject.Walls(childComplexity), true
+
 	case "Query.getUser":
 		if e.complexity.Query.GetUser == nil {
 			break
@@ -126,6 +307,31 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 		}
 
 		return e.complexity.Query.GetUser(childComplexity, args["id"].(string)), true
+
+	case "Room.height":
+		if e.complexity.Room.Height == nil {
+			break
+		}
+
+		return e.complexity.Room.Height(childComplexity), true
+	case "Room.id":
+		if e.complexity.Room.ID == nil {
+			break
+		}
+
+		return e.complexity.Room.ID(childComplexity), true
+	case "Room.name":
+		if e.complexity.Room.Name == nil {
+			break
+		}
+
+		return e.complexity.Room.Name(childComplexity), true
+	case "Room.vertices":
+		if e.complexity.Room.Vertices == nil {
+			break
+		}
+
+		return e.complexity.Room.Vertices(childComplexity), true
 
 	case "User.birthday":
 		if e.complexity.User.Birthday == nil {
@@ -158,6 +364,63 @@ func (e *executableSchema) Complexity(ctx context.Context, typeName, field strin
 
 		return e.complexity.User.Username(childComplexity), true
 
+	case "Vertex.x":
+		if e.complexity.Vertex.X == nil {
+			break
+		}
+
+		return e.complexity.Vertex.X(childComplexity), true
+	case "Vertex.y":
+		if e.complexity.Vertex.Y == nil {
+			break
+		}
+
+		return e.complexity.Vertex.Y(childComplexity), true
+
+	case "Wall.end":
+		if e.complexity.Wall.End == nil {
+			break
+		}
+
+		return e.complexity.Wall.End(childComplexity), true
+	case "Wall.id":
+		if e.complexity.Wall.ID == nil {
+			break
+		}
+
+		return e.complexity.Wall.ID(childComplexity), true
+	case "Wall.loadBearing":
+		if e.complexity.Wall.LoadBearing == nil {
+			break
+		}
+
+		return e.complexity.Wall.LoadBearing(childComplexity), true
+	case "Wall.start":
+		if e.complexity.Wall.Start == nil {
+			break
+		}
+
+		return e.complexity.Wall.Start(childComplexity), true
+	case "Wall.thickness":
+		if e.complexity.Wall.Thickness == nil {
+			break
+		}
+
+		return e.complexity.Wall.Thickness(childComplexity), true
+
+	case "WallEnd.x":
+		if e.complexity.WallEnd.X == nil {
+			break
+		}
+
+		return e.complexity.WallEnd.X(childComplexity), true
+	case "WallEnd.y":
+		if e.complexity.WallEnd.Y == nil {
+			break
+		}
+
+		return e.complexity.WallEnd.Y(childComplexity), true
+
 	}
 	return 0, false
 }
@@ -167,7 +430,15 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{opCtx, e, 0, 0, make(chan graphql.DeferredResult)}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputBTI_agent,
+		ec.unmarshalInputConstraintsInput,
+		ec.unmarshalInputGeometryInput,
+		ec.unmarshalInputPlanInput,
+		ec.unmarshalInputPlanningProjectInput,
 		ec.unmarshalInputRegisterInput,
+		ec.unmarshalInputRoomInput,
+		ec.unmarshalInputVertexInput,
+		ec.unmarshalInputWallEndInput,
+		ec.unmarshalInputWallInput,
 	)
 	first := true
 
@@ -284,10 +555,10 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_Mutation_askBTIagent_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_Mutation_createPlanningProject_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNBTI_agent2ServerBTIᚋgraphᚋmodelᚐBtiAgent)
+	arg0, err := graphql.ProcessArgField(ctx, rawArgs, "input", ec.unmarshalNPlanningProjectInput2ServerBTIᚋgraphᚋmodelᚐPlanningProjectInput)
 	if err != nil {
 		return nil, err
 	}
@@ -380,6 +651,103 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 
 // region    **************************** field.gotpl *****************************
 
+func (ec *executionContext) _Constraints_forbiddenMoves(ctx context.Context, field graphql.CollectedField, obj *model.Constraints) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Constraints_forbiddenMoves,
+		func(ctx context.Context) (any, error) {
+			return obj.ForbiddenMoves, nil
+		},
+		nil,
+		ec.marshalOString2ᚕstringᚄ,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Constraints_forbiddenMoves(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Constraints",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Constraints_regionRules(ctx context.Context, field graphql.CollectedField, obj *model.Constraints) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Constraints_regionRules,
+		func(ctx context.Context) (any, error) {
+			return obj.RegionRules, nil
+		},
+		nil,
+		ec.marshalOString2ᚕstringᚄ,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_Constraints_regionRules(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Constraints",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Geometry_rooms(ctx context.Context, field graphql.CollectedField, obj *model.Geometry) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Geometry_rooms,
+		func(ctx context.Context) (any, error) {
+			return obj.Rooms, nil
+		},
+		nil,
+		ec.marshalNRoom2ᚕᚖServerBTIᚋgraphᚋmodelᚐRoomᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Geometry_rooms(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Geometry",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Room_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Room_name(ctx, field)
+			case "height":
+				return ec.fieldContext_Room_height(ctx, field)
+			case "vertices":
+				return ec.fieldContext_Room_vertices(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Room", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_register(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -433,31 +801,47 @@ func (ec *executionContext) fieldContext_Mutation_register(ctx context.Context, 
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_askBTIagent(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Mutation_createPlanningProject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
 		ec.OperationContext,
 		field,
-		ec.fieldContext_Mutation_askBTIagent,
+		ec.fieldContext_Mutation_createPlanningProject,
 		func(ctx context.Context) (any, error) {
 			fc := graphql.GetFieldContext(ctx)
-			return ec.resolvers.Mutation().AskBTIagent(ctx, fc.Args["input"].(model.BtiAgent))
+			return ec.resolvers.Mutation().CreatePlanningProject(ctx, fc.Args["input"].(model.PlanningProjectInput))
 		},
 		nil,
-		ec.marshalOString2ᚖstring,
+		ec.marshalNPlanningProject2ᚖServerBTIᚋgraphᚋmodelᚐPlanningProject,
 		true,
-		false,
+		true,
 	)
 }
 
-func (ec *executionContext) fieldContext_Mutation_askBTIagent(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_createPlanningProject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type String does not have child fields")
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_PlanningProject_id(ctx, field)
+			case "status":
+				return ec.fieldContext_PlanningProject_status(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_PlanningProject_createdAt(ctx, field)
+			case "plan":
+				return ec.fieldContext_PlanningProject_plan(ctx, field)
+			case "geometry":
+				return ec.fieldContext_PlanningProject_geometry(ctx, field)
+			case "walls":
+				return ec.fieldContext_PlanningProject_walls(ctx, field)
+			case "constraints":
+				return ec.fieldContext_PlanningProject_constraints(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PlanningProject", field.Name)
 		},
 	}
 	defer func() {
@@ -467,9 +851,546 @@ func (ec *executionContext) fieldContext_Mutation_askBTIagent(ctx context.Contex
 		}
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Mutation_askBTIagent_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+	if fc.Args, err = ec.field_Mutation_createPlanningProject_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_address(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_address,
+		func(ctx context.Context) (any, error) {
+			return obj.Address, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_address(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_area(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_area,
+		func(ctx context.Context) (any, error) {
+			return obj.Area, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_area(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_source(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_source,
+		func(ctx context.Context) (any, error) {
+			return obj.Source, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_layoutType(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_layoutType,
+		func(ctx context.Context) (any, error) {
+			return obj.LayoutType, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_layoutType(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_familyProfile(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_familyProfile,
+		func(ctx context.Context) (any, error) {
+			return obj.FamilyProfile, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_familyProfile(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_goal(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_goal,
+		func(ctx context.Context) (any, error) {
+			return obj.Goal, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_goal(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_prompt(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_prompt,
+		func(ctx context.Context) (any, error) {
+			return obj.Prompt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_prompt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_ceilingHeight(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_ceilingHeight,
+		func(ctx context.Context) (any, error) {
+			return obj.CeilingHeight, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_ceilingHeight(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_floorDelta(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_floorDelta,
+		func(ctx context.Context) (any, error) {
+			return obj.FloorDelta, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_floorDelta(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Plan_recognitionStatus(ctx context.Context, field graphql.CollectedField, obj *model.Plan) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Plan_recognitionStatus,
+		func(ctx context.Context) (any, error) {
+			return obj.RecognitionStatus, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Plan_recognitionStatus(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Plan",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanningProject_id(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanningProject_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanningProject_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanningProject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanningProject_status(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanningProject_status,
+		func(ctx context.Context) (any, error) {
+			return obj.Status, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanningProject_status(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanningProject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanningProject_createdAt(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanningProject_createdAt,
+		func(ctx context.Context) (any, error) {
+			return obj.CreatedAt, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanningProject_createdAt(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanningProject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanningProject_plan(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanningProject_plan,
+		func(ctx context.Context) (any, error) {
+			return obj.Plan, nil
+		},
+		nil,
+		ec.marshalNPlan2ᚖServerBTIᚋgraphᚋmodelᚐPlan,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanningProject_plan(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanningProject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "address":
+				return ec.fieldContext_Plan_address(ctx, field)
+			case "area":
+				return ec.fieldContext_Plan_area(ctx, field)
+			case "source":
+				return ec.fieldContext_Plan_source(ctx, field)
+			case "layoutType":
+				return ec.fieldContext_Plan_layoutType(ctx, field)
+			case "familyProfile":
+				return ec.fieldContext_Plan_familyProfile(ctx, field)
+			case "goal":
+				return ec.fieldContext_Plan_goal(ctx, field)
+			case "prompt":
+				return ec.fieldContext_Plan_prompt(ctx, field)
+			case "ceilingHeight":
+				return ec.fieldContext_Plan_ceilingHeight(ctx, field)
+			case "floorDelta":
+				return ec.fieldContext_Plan_floorDelta(ctx, field)
+			case "recognitionStatus":
+				return ec.fieldContext_Plan_recognitionStatus(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Plan", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanningProject_geometry(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanningProject_geometry,
+		func(ctx context.Context) (any, error) {
+			return obj.Geometry, nil
+		},
+		nil,
+		ec.marshalNGeometry2ᚖServerBTIᚋgraphᚋmodelᚐGeometry,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanningProject_geometry(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanningProject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "rooms":
+				return ec.fieldContext_Geometry_rooms(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Geometry", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanningProject_walls(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanningProject_walls,
+		func(ctx context.Context) (any, error) {
+			return obj.Walls, nil
+		},
+		nil,
+		ec.marshalNWall2ᚕᚖServerBTIᚋgraphᚋmodelᚐWallᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanningProject_walls(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanningProject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Wall_id(ctx, field)
+			case "start":
+				return ec.fieldContext_Wall_start(ctx, field)
+			case "end":
+				return ec.fieldContext_Wall_end(ctx, field)
+			case "loadBearing":
+				return ec.fieldContext_Wall_loadBearing(ctx, field)
+			case "thickness":
+				return ec.fieldContext_Wall_thickness(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Wall", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _PlanningProject_constraints(ctx context.Context, field graphql.CollectedField, obj *model.PlanningProject) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_PlanningProject_constraints,
+		func(ctx context.Context) (any, error) {
+			return obj.Constraints, nil
+		},
+		nil,
+		ec.marshalOConstraints2ᚖServerBTIᚋgraphᚋmodelᚐConstraints,
+		true,
+		false,
+	)
+}
+
+func (ec *executionContext) fieldContext_PlanningProject_constraints(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "PlanningProject",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "forbiddenMoves":
+				return ec.fieldContext_Constraints_forbiddenMoves(ctx, field)
+			case "regionRules":
+				return ec.fieldContext_Constraints_regionRules(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Constraints", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -635,6 +1556,128 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 	return fc, nil
 }
 
+func (ec *executionContext) _Room_id(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Room_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Room_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Room_name(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Room_name,
+		func(ctx context.Context) (any, error) {
+			return obj.Name, nil
+		},
+		nil,
+		ec.marshalNString2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Room_name(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Room_height(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Room_height,
+		func(ctx context.Context) (any, error) {
+			return obj.Height, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Room_height(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Room_vertices(ctx context.Context, field graphql.CollectedField, obj *model.Room) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Room_vertices,
+		func(ctx context.Context) (any, error) {
+			return obj.Vertices, nil
+		},
+		nil,
+		ec.marshalNVertex2ᚕᚖServerBTIᚋgraphᚋmodelᚐVertexᚄ,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Room_vertices(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Room",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "x":
+				return ec.fieldContext_Vertex_x(ctx, field)
+			case "y":
+				return ec.fieldContext_Vertex_y(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Vertex", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
 	return graphql.ResolveField(
 		ctx,
@@ -775,6 +1818,279 @@ func (ec *executionContext) fieldContext_User_birthday(_ context.Context, field 
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vertex_x(ctx context.Context, field graphql.CollectedField, obj *model.Vertex) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Vertex_x,
+		func(ctx context.Context) (any, error) {
+			return obj.X, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Vertex_x(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vertex",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Vertex_y(ctx context.Context, field graphql.CollectedField, obj *model.Vertex) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Vertex_y,
+		func(ctx context.Context) (any, error) {
+			return obj.Y, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Vertex_y(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Vertex",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Wall_id(ctx context.Context, field graphql.CollectedField, obj *model.Wall) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Wall_id,
+		func(ctx context.Context) (any, error) {
+			return obj.ID, nil
+		},
+		nil,
+		ec.marshalNID2string,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Wall_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Wall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Wall_start(ctx context.Context, field graphql.CollectedField, obj *model.Wall) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Wall_start,
+		func(ctx context.Context) (any, error) {
+			return obj.Start, nil
+		},
+		nil,
+		ec.marshalNWallEnd2ᚖServerBTIᚋgraphᚋmodelᚐWallEnd,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Wall_start(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Wall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "x":
+				return ec.fieldContext_WallEnd_x(ctx, field)
+			case "y":
+				return ec.fieldContext_WallEnd_y(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WallEnd", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Wall_end(ctx context.Context, field graphql.CollectedField, obj *model.Wall) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Wall_end,
+		func(ctx context.Context) (any, error) {
+			return obj.End, nil
+		},
+		nil,
+		ec.marshalNWallEnd2ᚖServerBTIᚋgraphᚋmodelᚐWallEnd,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Wall_end(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Wall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "x":
+				return ec.fieldContext_WallEnd_x(ctx, field)
+			case "y":
+				return ec.fieldContext_WallEnd_y(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type WallEnd", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Wall_loadBearing(ctx context.Context, field graphql.CollectedField, obj *model.Wall) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Wall_loadBearing,
+		func(ctx context.Context) (any, error) {
+			return obj.LoadBearing, nil
+		},
+		nil,
+		ec.marshalNBoolean2bool,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Wall_loadBearing(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Wall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Wall_thickness(ctx context.Context, field graphql.CollectedField, obj *model.Wall) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_Wall_thickness,
+		func(ctx context.Context) (any, error) {
+			return obj.Thickness, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_Wall_thickness(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Wall",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WallEnd_x(ctx context.Context, field graphql.CollectedField, obj *model.WallEnd) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_WallEnd_x,
+		func(ctx context.Context) (any, error) {
+			return obj.X, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_WallEnd_x(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WallEnd",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _WallEnd_y(ctx context.Context, field graphql.CollectedField, obj *model.WallEnd) (ret graphql.Marshaler) {
+	return graphql.ResolveField(
+		ctx,
+		ec.OperationContext,
+		field,
+		ec.fieldContext_WallEnd_y,
+		func(ctx context.Context) (any, error) {
+			return obj.Y, nil
+		},
+		nil,
+		ec.marshalNFloat2float64,
+		true,
+		true,
+	)
+}
+
+func (ec *executionContext) fieldContext_WallEnd_y(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "WallEnd",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Float does not have child fields")
 		},
 	}
 	return fc, nil
@@ -2260,6 +3576,205 @@ func (ec *executionContext) unmarshalInputBTI_agent(ctx context.Context, obj any
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputConstraintsInput(ctx context.Context, obj any) (model.ConstraintsInput, error) {
+	var it model.ConstraintsInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"forbiddenMoves", "regionRules"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "forbiddenMoves":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("forbiddenMoves"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ForbiddenMoves = data
+		case "regionRules":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("regionRules"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RegionRules = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputGeometryInput(ctx context.Context, obj any) (model.GeometryInput, error) {
+	var it model.GeometryInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"rooms"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "rooms":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("rooms"))
+			data, err := ec.unmarshalNRoomInput2ᚕᚖServerBTIᚋgraphᚋmodelᚐRoomInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Rooms = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPlanInput(ctx context.Context, obj any) (model.PlanInput, error) {
+	var it model.PlanInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"address", "area", "source", "layoutType", "familyProfile", "goal", "prompt", "ceilingHeight", "floorDelta", "recognitionStatus"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "address":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("address"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Address = data
+		case "area":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("area"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Area = data
+		case "source":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("source"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Source = data
+		case "layoutType":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("layoutType"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LayoutType = data
+		case "familyProfile":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("familyProfile"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FamilyProfile = data
+		case "goal":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("goal"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Goal = data
+		case "prompt":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("prompt"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Prompt = data
+		case "ceilingHeight":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("ceilingHeight"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.CeilingHeight = data
+		case "floorDelta":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("floorDelta"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.FloorDelta = data
+		case "recognitionStatus":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("recognitionStatus"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RecognitionStatus = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputPlanningProjectInput(ctx context.Context, obj any) (model.PlanningProjectInput, error) {
+	var it model.PlanningProjectInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"plan", "geometry", "walls", "constraints"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "plan":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("plan"))
+			data, err := ec.unmarshalNPlanInput2ᚖServerBTIᚋgraphᚋmodelᚐPlanInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Plan = data
+		case "geometry":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("geometry"))
+			data, err := ec.unmarshalNGeometryInput2ᚖServerBTIᚋgraphᚋmodelᚐGeometryInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Geometry = data
+		case "walls":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("walls"))
+			data, err := ec.unmarshalNWallInput2ᚕᚖServerBTIᚋgraphᚋmodelᚐWallInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Walls = data
+		case "constraints":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("constraints"))
+			data, err := ec.unmarshalOConstraintsInput2ᚖServerBTIᚋgraphᚋmodelᚐConstraintsInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Constraints = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj any) (model.RegisterInput, error) {
 	var it model.RegisterInput
 	asMap := map[string]any{}
@@ -2315,6 +3830,177 @@ func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputRoomInput(ctx context.Context, obj any) (model.RoomInput, error) {
+	var it model.RoomInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "name", "height", "vertices"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "height":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("height"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Height = data
+		case "vertices":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("vertices"))
+			data, err := ec.unmarshalNVertexInput2ᚕᚖServerBTIᚋgraphᚋmodelᚐVertexInputᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Vertices = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputVertexInput(ctx context.Context, obj any) (model.VertexInput, error) {
+	var it model.VertexInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"x", "y"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "x":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("x"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.X = data
+		case "y":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("y"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Y = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputWallEndInput(ctx context.Context, obj any) (model.WallEndInput, error) {
+	var it model.WallEndInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"x", "y"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "x":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("x"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.X = data
+		case "y":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("y"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Y = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputWallInput(ctx context.Context, obj any) (model.WallInput, error) {
+	var it model.WallInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"id", "start", "end", "loadBearing", "thickness"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "id":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+			data, err := ec.unmarshalOID2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ID = data
+		case "start":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("start"))
+			data, err := ec.unmarshalNWallEndInput2ᚖServerBTIᚋgraphᚋmodelᚐWallEndInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Start = data
+		case "end":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("end"))
+			data, err := ec.unmarshalNWallEndInput2ᚖServerBTIᚋgraphᚋmodelᚐWallEndInput(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.End = data
+		case "loadBearing":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("loadBearing"))
+			data, err := ec.unmarshalNBoolean2bool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LoadBearing = data
+		case "thickness":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("thickness"))
+			data, err := ec.unmarshalNFloat2float64(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Thickness = data
+		}
+	}
+
+	return it, nil
+}
+
 // endregion **************************** input.gotpl *****************************
 
 // region    ************************** interface.gotpl ***************************
@@ -2322,6 +4008,83 @@ func (ec *executionContext) unmarshalInputRegisterInput(ctx context.Context, obj
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
+
+var constraintsImplementors = []string{"Constraints"}
+
+func (ec *executionContext) _Constraints(ctx context.Context, sel ast.SelectionSet, obj *model.Constraints) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, constraintsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Constraints")
+		case "forbiddenMoves":
+			out.Values[i] = ec._Constraints_forbiddenMoves(ctx, field, obj)
+		case "regionRules":
+			out.Values[i] = ec._Constraints_regionRules(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var geometryImplementors = []string{"Geometry"}
+
+func (ec *executionContext) _Geometry(ctx context.Context, sel ast.SelectionSet, obj *model.Geometry) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, geometryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Geometry")
+		case "rooms":
+			out.Values[i] = ec._Geometry_rooms(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
 
 var mutationImplementors = []string{"Mutation"}
 
@@ -2349,10 +4112,163 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "askBTIagent":
+		case "createPlanningProject":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_askBTIagent(ctx, field)
+				return ec._Mutation_createPlanningProject(ctx, field)
 			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var planImplementors = []string{"Plan"}
+
+func (ec *executionContext) _Plan(ctx context.Context, sel ast.SelectionSet, obj *model.Plan) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, planImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Plan")
+		case "address":
+			out.Values[i] = ec._Plan_address(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "area":
+			out.Values[i] = ec._Plan_area(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "source":
+			out.Values[i] = ec._Plan_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "layoutType":
+			out.Values[i] = ec._Plan_layoutType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "familyProfile":
+			out.Values[i] = ec._Plan_familyProfile(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "goal":
+			out.Values[i] = ec._Plan_goal(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "prompt":
+			out.Values[i] = ec._Plan_prompt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "ceilingHeight":
+			out.Values[i] = ec._Plan_ceilingHeight(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "floorDelta":
+			out.Values[i] = ec._Plan_floorDelta(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "recognitionStatus":
+			out.Values[i] = ec._Plan_recognitionStatus(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var planningProjectImplementors = []string{"PlanningProject"}
+
+func (ec *executionContext) _PlanningProject(ctx context.Context, sel ast.SelectionSet, obj *model.PlanningProject) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, planningProjectImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("PlanningProject")
+		case "id":
+			out.Values[i] = ec._PlanningProject_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._PlanningProject_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "createdAt":
+			out.Values[i] = ec._PlanningProject_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "plan":
+			out.Values[i] = ec._PlanningProject_plan(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "geometry":
+			out.Values[i] = ec._PlanningProject_geometry(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "walls":
+			out.Values[i] = ec._PlanningProject_walls(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "constraints":
+			out.Values[i] = ec._PlanningProject_constraints(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -2445,6 +4361,60 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
+var roomImplementors = []string{"Room"}
+
+func (ec *executionContext) _Room(ctx context.Context, sel ast.SelectionSet, obj *model.Room) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, roomImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Room")
+		case "id":
+			out.Values[i] = ec._Room_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "name":
+			out.Values[i] = ec._Room_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "height":
+			out.Values[i] = ec._Room_height(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "vertices":
+			out.Values[i] = ec._Room_vertices(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var userImplementors = []string{"User"}
 
 func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
@@ -2478,6 +4448,153 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "birthday":
 			out.Values[i] = ec._User_birthday(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var vertexImplementors = []string{"Vertex"}
+
+func (ec *executionContext) _Vertex(ctx context.Context, sel ast.SelectionSet, obj *model.Vertex) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, vertexImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Vertex")
+		case "x":
+			out.Values[i] = ec._Vertex_x(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "y":
+			out.Values[i] = ec._Vertex_y(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var wallImplementors = []string{"Wall"}
+
+func (ec *executionContext) _Wall(ctx context.Context, sel ast.SelectionSet, obj *model.Wall) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, wallImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Wall")
+		case "id":
+			out.Values[i] = ec._Wall_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "start":
+			out.Values[i] = ec._Wall_start(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "end":
+			out.Values[i] = ec._Wall_end(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "loadBearing":
+			out.Values[i] = ec._Wall_loadBearing(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "thickness":
+			out.Values[i] = ec._Wall_thickness(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var wallEndImplementors = []string{"WallEnd"}
+
+func (ec *executionContext) _WallEnd(ctx context.Context, sel ast.SelectionSet, obj *model.WallEnd) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, wallEndImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("WallEnd")
+		case "x":
+			out.Values[i] = ec._WallEnd_x(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "y":
+			out.Values[i] = ec._WallEnd_y(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -2839,11 +4956,6 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 
 // region    ***************************** type.gotpl *****************************
 
-func (ec *executionContext) unmarshalNBTI_agent2ServerBTIᚋgraphᚋmodelᚐBtiAgent(ctx context.Context, v any) (model.BtiAgent, error) {
-	res, err := ec.unmarshalInputBTI_agent(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v any) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -2858,6 +4970,37 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNFloat2float64(ctx context.Context, v any) (float64, error) {
+	res, err := graphql.UnmarshalFloatContext(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNFloat2float64(ctx context.Context, sel ast.SelectionSet, v float64) graphql.Marshaler {
+	_ = sel
+	res := graphql.MarshalFloatContext(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return graphql.WrapContextMarshaler(ctx, res)
+}
+
+func (ec *executionContext) marshalNGeometry2ᚖServerBTIᚋgraphᚋmodelᚐGeometry(ctx context.Context, sel ast.SelectionSet, v *model.Geometry) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Geometry(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNGeometryInput2ᚖServerBTIᚋgraphᚋmodelᚐGeometryInput(ctx context.Context, v any) (*model.GeometryInput, error) {
+	res, err := ec.unmarshalInputGeometryInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNID2string(ctx context.Context, v any) (string, error) {
@@ -2876,9 +5019,117 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) marshalNPlan2ᚖServerBTIᚋgraphᚋmodelᚐPlan(ctx context.Context, sel ast.SelectionSet, v *model.Plan) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Plan(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPlanInput2ᚖServerBTIᚋgraphᚋmodelᚐPlanInput(ctx context.Context, v any) (*model.PlanInput, error) {
+	res, err := ec.unmarshalInputPlanInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNPlanningProject2ServerBTIᚋgraphᚋmodelᚐPlanningProject(ctx context.Context, sel ast.SelectionSet, v model.PlanningProject) graphql.Marshaler {
+	return ec._PlanningProject(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNPlanningProject2ᚖServerBTIᚋgraphᚋmodelᚐPlanningProject(ctx context.Context, sel ast.SelectionSet, v *model.PlanningProject) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._PlanningProject(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNPlanningProjectInput2ServerBTIᚋgraphᚋmodelᚐPlanningProjectInput(ctx context.Context, v any) (model.PlanningProjectInput, error) {
+	res, err := ec.unmarshalInputPlanningProjectInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNRegisterInput2ServerBTIᚋgraphᚋmodelᚐRegisterInput(ctx context.Context, v any) (model.RegisterInput, error) {
 	res, err := ec.unmarshalInputRegisterInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNRoom2ᚕᚖServerBTIᚋgraphᚋmodelᚐRoomᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Room) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNRoom2ᚖServerBTIᚋgraphᚋmodelᚐRoom(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNRoom2ᚖServerBTIᚋgraphᚋmodelᚐRoom(ctx context.Context, sel ast.SelectionSet, v *model.Room) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Room(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNRoomInput2ᚕᚖServerBTIᚋgraphᚋmodelᚐRoomInputᚄ(ctx context.Context, v any) ([]*model.RoomInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.RoomInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNRoomInput2ᚖServerBTIᚋgraphᚋmodelᚐRoomInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNRoomInput2ᚖServerBTIᚋgraphᚋmodelᚐRoomInput(ctx context.Context, v any) (*model.RoomInput, error) {
+	res, err := ec.unmarshalInputRoomInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
@@ -2909,6 +5160,169 @@ func (ec *executionContext) marshalNUser2ᚖServerBTIᚋgraphᚋmodelᚐUser(ctx
 		return graphql.Null
 	}
 	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNVertex2ᚕᚖServerBTIᚋgraphᚋmodelᚐVertexᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Vertex) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNVertex2ᚖServerBTIᚋgraphᚋmodelᚐVertex(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNVertex2ᚖServerBTIᚋgraphᚋmodelᚐVertex(ctx context.Context, sel ast.SelectionSet, v *model.Vertex) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Vertex(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNVertexInput2ᚕᚖServerBTIᚋgraphᚋmodelᚐVertexInputᚄ(ctx context.Context, v any) ([]*model.VertexInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.VertexInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNVertexInput2ᚖServerBTIᚋgraphᚋmodelᚐVertexInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNVertexInput2ᚖServerBTIᚋgraphᚋmodelᚐVertexInput(ctx context.Context, v any) (*model.VertexInput, error) {
+	res, err := ec.unmarshalInputVertexInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNWall2ᚕᚖServerBTIᚋgraphᚋmodelᚐWallᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Wall) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNWall2ᚖServerBTIᚋgraphᚋmodelᚐWall(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNWall2ᚖServerBTIᚋgraphᚋmodelᚐWall(ctx context.Context, sel ast.SelectionSet, v *model.Wall) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Wall(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalNWallEnd2ᚖServerBTIᚋgraphᚋmodelᚐWallEnd(ctx context.Context, sel ast.SelectionSet, v *model.WallEnd) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			graphql.AddErrorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._WallEnd(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNWallEndInput2ᚖServerBTIᚋgraphᚋmodelᚐWallEndInput(ctx context.Context, v any) (*model.WallEndInput, error) {
+	res, err := ec.unmarshalInputWallEndInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNWallInput2ᚕᚖServerBTIᚋgraphᚋmodelᚐWallInputᚄ(ctx context.Context, v any) ([]*model.WallInput, error) {
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]*model.WallInput, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNWallInput2ᚖServerBTIᚋgraphᚋmodelᚐWallInput(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) unmarshalNWallInput2ᚖServerBTIᚋgraphᚋmodelᚐWallInput(ctx context.Context, v any) (*model.WallInput, error) {
+	res, err := ec.unmarshalInputWallInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -3192,6 +5606,75 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	_ = ctx
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOConstraints2ᚖServerBTIᚋgraphᚋmodelᚐConstraints(ctx context.Context, sel ast.SelectionSet, v *model.Constraints) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Constraints(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOConstraintsInput2ᚖServerBTIᚋgraphᚋmodelᚐConstraintsInput(ctx context.Context, v any) (*model.ConstraintsInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputConstraintsInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v any) (*string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := graphql.UnmarshalID(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	_ = sel
+	_ = ctx
+	res := graphql.MarshalID(*v)
+	return res
+}
+
+func (ec *executionContext) unmarshalOString2ᚕstringᚄ(ctx context.Context, v any) ([]string, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []any
+	vSlice = graphql.CoerceList(v)
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNString2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalNString2string(ctx, sel, v[i])
+	}
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v any) (*string, error) {

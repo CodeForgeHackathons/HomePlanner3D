@@ -10,8 +10,10 @@ import (
 	"ServerBTI/graph/model"
 	"ServerBTI/internal/models"
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
 // Register is the resolver for the register field.
@@ -36,19 +38,102 @@ func (r *mutationResolver) Register(ctx context.Context, input model.RegisterInp
 	return user_graphql, nil
 }
 
-// AskBTIagent is the resolver for the askBTIagent field.
-func (r *mutationResolver) AskBTIagent(ctx context.Context, input model.BtiAgent) (*string, error) {
-	request, err := assistant.AskAgent(input.Prompt)
-
+// CreatePlanningProject is the resolver for the createPlanningProject field.
+func (r *mutationResolver) CreatePlanningProject(ctx context.Context, input model.PlanningProjectInput) (*model.PlanningProject, error) {
+	inputJSON, err := json.Marshal(input)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка подготовки данных для анализа: %w", err)
+	}
+	aiAnalyze, err := assistant.AiAnalyze(string(inputJSON))
 	if err != nil {
 		return nil, err
 	}
-	return &request, nil
+
+	if !aiAnalyze.IsValid {
+		return nil, fmt.Errorf("проект не прошёл проверку. Решение: %s. Обоснование: %s",
+			aiAnalyze.Decision, aiAnalyze.Justification)
+	}
+	db := r.DB
+
+	project := models.PlanningProject{
+		Status:            aiAnalyze.Decision,
+		Address:           input.Plan.Address,
+		Area:              fmt.Sprintf("%f", input.Plan.Area),
+		Source:            input.Plan.Source,
+		LayoutType:        input.Plan.LayoutType,
+		FamilyProfile:     input.Plan.FamilyProfile,
+		Goal:              input.Plan.Goal,
+		Prompt:            input.Plan.Prompt,
+		CeilingHeight:     fmt.Sprintf("%f", input.Plan.CeilingHeight),
+		FloorDelta:        fmt.Sprintf("%f", input.Plan.FloorDelta),
+		RecognitionStatus: input.Plan.RecognitionStatus,
+	}
+
+	if err := db.Create(&project).Error; err != nil {
+		return nil, fmt.Errorf("ошибка сохранения проекта: %w", err)
+	}
+
+	// --- 4. Сохраняем комнаты ---
+	for _, roomInput := range input.Geometry.Rooms {
+		room := models.Room{
+			ProjectID: project.ID,
+			Name:      roomInput.Name,
+			Height:    fmt.Sprintf("%f", roomInput.Height),
+		}
+		if err := db.Create(&room).Error; err != nil {
+			return nil, err
+		}
+
+		for _, v := range roomInput.Vertices {
+			vertex := models.RoomVertex{
+				RoomID: room.ID,
+				X:      fmt.Sprintf("%f", v.X),
+				Y:      fmt.Sprintf("%f", v.Y),
+			}
+			if err := db.Create(&vertex).Error; err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// --- 5. Сохраняем стены ---
+	for _, wallInput := range input.Walls {
+		wall := models.Wall{
+			ProjectID:   project.ID,
+			StartX:      fmt.Sprintf("%f", wallInput.Start.X),
+			StartY:      fmt.Sprintf("%f", wallInput.Start.Y),
+			EndX:        fmt.Sprintf("%f", wallInput.End.X),
+			EndY:        fmt.Sprintf("%f", wallInput.End.Y),
+			LoadBearing: wallInput.LoadBearing,
+			Thickness:   fmt.Sprintf("%f", wallInput.Thickness),
+		}
+		if err := db.Create(&wall).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// --- 6. Сохраняем ограничения, если есть ---
+	if input.Constraints != nil {
+		constraints := models.Constraints{
+			ProjectID:      project.ID,
+			ForbiddenMoves: strings.Join(input.Constraints.ForbiddenMoves, ","),
+			RegionRules:    strings.Join(input.Constraints.RegionRules, ","),
+		}
+		if err := db.Create(&constraints).Error; err != nil {
+			return nil, err
+		}
+	}
+
+	// --- 7. Возвращаем GraphQL модель ---
+	return ConvertDbProjectToGraph(&project), nil
 }
 
 // GetUser is the resolver for the getUser field.
 func (r *queryResolver) GetUser(ctx context.Context, id string) (*model.User, error) {
-	uid, _ := strconv.Atoi(id)
+	uid, err := strconv.Atoi(id)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id")
+	}
 
 	var user_DataBase models.User
 
@@ -73,3 +158,32 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *queryResolver) GetUserProjects(ctx context.Context, userId string) ([]*model.PlanningProject, error) {
+	uid, err := strconv.ParseInt(userId, 10, 64)
+	if err != nil {
+		return nil, fmt.Errorf("invalid user id")
+	}
+
+	// Загружаем из базы
+	var dbProjects []models.PlanningProject
+	if err := r.DB.Where("user_id = ?", uid).Find(&dbProjects).Error; err != nil {
+		return nil, err
+	}
+
+	// Конвертация в GraphQL модели
+	gqlProjects := make([]*model.PlanningProject, 0, len(dbProjects))
+	for _, p := range dbProjects {
+		gqlProjects = append(gqlProjects, ConvertDbProjectToGraph(&p))
+	}
+
+	return gqlProjects, nil
+}
+*/

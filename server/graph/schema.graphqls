@@ -28,7 +28,6 @@ input RegisterInput {
 
 type Mutation {
   register(input: RegisterInput!): User!
-  askBTIagent(input: BTI_agent!): String
   createPlanningProject(input: PlanningProjectInput!): PlanningProject!
 
 }
@@ -138,7 +137,7 @@ type Plan {
 type PlanningProject {
   id: ID!
   status: String!
-  createdAt: Time!
+  createdAt: String!
   plan: Plan!
   geometry: Geometry!
   walls: [Wall!]!
