@@ -10,7 +10,7 @@
         </p>
       </div>
       <div class="lk__hero-actions">
-        <button type="button" class="btn btn--ghost btn--small" @click="$emit('back')">
+        <button type="button" class="btn btn--ghost btn--small" @click="goBack">
           ← На главную
         </button>
         <button
@@ -73,39 +73,41 @@
         </div>
 
         <div v-else class="lk-card__projects">
-          <div v-for="project in projects" :key="project.id" class="project-item">
-            <div class="project__header">
-              <strong>Проект #{{ project.id }}</strong>
-              <span class="project__status" :class="`project__status--${getStatusClass(project.status)}`">
-                {{ project.status }}
-              </span>
-            </div>
-            <div class="project__details">
-              <div v-if="project.plan?.address" class="project__detail">
-                <span>Адрес:</span>
-                <span>{{ project.plan.address }}</span>
+          <div class="projects-scroll-container">
+            <div v-for="project in projects" :key="project.id" class="project-item">
+              <div class="project__header">
+                <strong>Проект #{{ project.id }}</strong>
+                <span class="project__status" :class="`project__status--${getStatusClass(project.status)}`">
+                  {{ project.status }}
+                </span>
               </div>
-              <div v-if="project.plan?.area" class="project__detail">
-                <span>Площадь:</span>
-                <span>{{ project.plan.area }} м²</span>
+              <div class="project__details">
+                <div v-if="project.plan?.address" class="project__detail">
+                  <span>Адрес:</span>
+                  <span>{{ project.plan.address }}</span>
+                </div>
+                <div v-if="project.plan?.area" class="project__detail">
+                  <span>Площадь:</span>
+                  <span>{{ project.plan.area }} м²</span>
+                </div>
+                <div class="project__detail">
+                  <span>Создан:</span>
+                  <span>{{ formatDate(project.createdAt) }}</span>
+                </div>
+                <div v-if="project.walls" class="project__detail">
+                  <span>Стен:</span>
+                  <span>{{ project.walls.length }}</span>
+                </div>
               </div>
-              <div class="project__detail">
-                <span>Создан:</span>
-                <span>{{ formatDate(project.createdAt) }}</span>
+              <div class="project__actions">
+                <button
+                  type="button"
+                  class="btn btn--ghost btn--small"
+                  @click="openConstructor(project)"
+                >
+                  Открыть в конструкторе
+                </button>
               </div>
-              <div v-if="project.walls" class="project__detail">
-                <span>Стен:</span>
-                <span>{{ project.walls.length }}</span>
-              </div>
-            </div>
-            <div class="project__actions">
-              <button
-                type="button"
-                class="btn btn--ghost btn--small"
-                @click="$emit('open-constructor', project)"
-              >
-                Открыть в конструкторе
-              </button>
             </div>
           </div>
         </div>
@@ -121,10 +123,10 @@
           задать вопросы в чате или по телефону.
         </p>
         <div class="lk-card__actions">
-          <button type="button" class="btn btn--ghost btn--small" @click="$emit('open-chat')">
+          <button type="button" class="btn btn--ghost btn--small" @click="openChat">
             Чат с экспертом
           </button>
-          <button type="button" class="btn btn--primary btn--small" @click="$emit('back')">
+          <button type="button" class="btn btn--primary btn--small" @click="goBack">
             Запросить консультацию
           </button>
         </div>
@@ -266,6 +268,19 @@ const formatDate = (dateString) => {
   }
 }
 
+// Методы навигации
+const goBack = () => {
+  emit('back')
+}
+
+const openChat = () => {
+  emit('open-chat')
+}
+
+const openConstructor = (project) => {
+  emit('open-constructor', project)
+}
+
 // Загружаем проекты при монтировании и при изменении пользователя
 onMounted(() => {
   if (props.user) {
@@ -400,7 +415,37 @@ watch(() => props.user, (newUser) => {
 .lk-card__projects {
   display: flex;
   flex-direction: column;
+  height: 100%;
+  min-height: 300px;
+}
+
+.projects-scroll-container {
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+  padding-right: 8px;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
+}
+
+/* Стили для скроллбара */
+.projects-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.projects-scroll-container::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 3px;
+}
+
+.projects-scroll-container::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.projects-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
 }
 
 .project-item {
@@ -408,6 +453,8 @@ watch(() => props.user, (newUser) => {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+  min-height: 120px;
 }
 
 .project__header {
@@ -422,6 +469,7 @@ watch(() => props.user, (newUser) => {
   padding: 4px 8px;
   border-radius: 12px;
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .project__status--success {
@@ -547,6 +595,10 @@ watch(() => props.user, (newUser) => {
     flex-direction: column;
     gap: 2px;
   }
+
+  .projects-scroll-container {
+    max-height: 350px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -562,6 +614,10 @@ watch(() => props.user, (newUser) => {
 
   .lk-card__pills {
     flex-direction: column;
+  }
+
+  .projects-scroll-container {
+    max-height: 300px;
   }
 }
 </style>
