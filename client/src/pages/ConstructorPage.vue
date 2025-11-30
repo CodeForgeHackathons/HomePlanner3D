@@ -127,10 +127,17 @@ const dpr = typeof window !== 'undefined' && window.devicePixelRatio ? Math.max(
 const canvasSize = computed(() => ({ w: 0, h: 0 }))
 
 // Глобальные функции для связи с Unity из index.html
+// В ConstructorPage.vue, в функции unityReady
 window.vueApp = {
   unityReady: () => {
     unityConnected.value = true
     console.log('Unity reported ready - sending initial data')
+
+    // Автоматически показываем Unity
+    if (window.showUnity) {
+      window.showUnity()
+    }
+
     setTimeout(() => sendDataToUnity(), 1000)
   },
   unityHidden: () => {
