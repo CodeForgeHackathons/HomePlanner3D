@@ -120,12 +120,9 @@
         </div>
         <p class="lk-card__text">
           Команда БТИ подключится к проекту, когда вы подтвердите сценарий. До этого момента можно
-          задать вопросы в чате или по телефону.
+          задать вопросы по телефону горячей линии.
         </p>
         <div class="lk-card__actions">
-          <button type="button" class="btn btn--ghost btn--small" @click="openChat">
-            Чат с экспертом
-          </button>
           <button type="button" class="btn btn--primary btn--small" @click="goBack">
             Запросить консультацию
           </button>
@@ -162,7 +159,7 @@ const props = defineProps({
   },
 });
 
-const emit = defineEmits(['back', 'open-auth', 'logout', 'open-chat', 'open-constructor']);
+const emit = defineEmits(['back', 'open-auth', 'logout', 'open-constructor']);
 
 const projects = ref([])
 const loadingProjects = ref(false)
@@ -268,20 +265,14 @@ const formatDate = (dateString) => {
   }
 }
 
-// Методы навигации
 const goBack = () => {
   emit('back')
-}
-
-const openChat = () => {
-  emit('open-chat')
 }
 
 const openConstructor = (project) => {
   emit('open-constructor', project)
 }
 
-// Загружаем проекты при монтировании и при изменении пользователя
 onMounted(() => {
   if (props.user) {
     loadProjects()
@@ -429,7 +420,6 @@ watch(() => props.user, (newUser) => {
   gap: 12px;
 }
 
-/* Стили для скроллбара */
 .projects-scroll-container::-webkit-scrollbar {
   width: 6px;
 }
@@ -515,22 +505,6 @@ watch(() => props.user, (newUser) => {
   gap: 8px;
 }
 
-.lk-card__pills {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.lk-card__pills li {
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  font-size: 13px;
-}
-
 .lk-card__actions {
   display: flex;
   flex-wrap: wrap;
@@ -610,10 +584,6 @@ watch(() => props.user, (newUser) => {
   .lk-card {
     border-radius: 16px;
     padding: 16px;
-  }
-
-  .lk-card__pills {
-    flex-direction: column;
   }
 
   .projects-scroll-container {
