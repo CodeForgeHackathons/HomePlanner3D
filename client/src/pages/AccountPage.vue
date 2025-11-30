@@ -61,17 +61,54 @@
       <article class="lk-card">
         <div class="lk-card__title">
           <span>Проекты</span>
-          <small>Скоро появятся</small>
+          <small>{{ projects.length }} проект(ов)</small>
         </div>
-        <p class="lk-card__text">
-          После отправки данных о квартире здесь будут статусы распознавания, проверки норм и готовые
-          пакеты документов.
-        </p>
-        <ul class="lk-card__pills">
-          <li>AI-варианты</li>
-          <li>Проверка норм</li>
-          <li>Документы для БТИ</li>
-        </ul>
+
+        <div v-if="loadingProjects" class="lk-card__loading">
+          <p>Загрузка проектов...</p>
+        </div>
+
+        <div v-else-if="projects.length === 0" class="lk-card__empty">
+          <p class="lk-card__text">У вас пока нет проектов.</p>
+        </div>
+
+        <div v-else class="lk-card__projects">
+          <div v-for="project in projects" :key="project.id" class="project-item">
+            <div class="project__header">
+              <strong>Проект #{{ project.id }}</strong>
+              <span class="project__status" :class="`project__status--${getStatusClass(project.status)}`">
+                {{ project.status }}
+              </span>
+            </div>
+            <div class="project__details">
+              <div v-if="project.plan?.address" class="project__detail">
+                <span>Адрес:</span>
+                <span>{{ project.plan.address }}</span>
+              </div>
+              <div v-if="project.plan?.area" class="project__detail">
+                <span>Площадь:</span>
+                <span>{{ project.plan.area }} м²</span>
+              </div>
+              <div class="project__detail">
+                <span>Создан:</span>
+                <span>{{ formatDate(project.createdAt) }}</span>
+              </div>
+              <div v-if="project.walls" class="project__detail">
+                <span>Стен:</span>
+                <span>{{ project.walls.length }}</span>
+              </div>
+            </div>
+            <div class="project__actions">
+              <button
+                type="button"
+                class="btn btn--ghost btn--small"
+                @click="$emit('open-constructor', project)"
+              >
+                Открыть в конструкторе
+              </button>
+            </div>
+          </div>
+        </div>
       </article>
 
       <article class="lk-card">
@@ -84,8 +121,12 @@
           задать вопросы в чате или по телефону.
         </p>
         <div class="lk-card__actions">
-          <button type="button" class="btn btn--ghost btn--small">Чат с экспертом</button>
-          <button type="button" class="btn btn--primary btn--small">Запросить консультацию</button>
+          <button type="button" class="btn btn--ghost btn--small" @click="$emit('open-chat')">
+            Чат с экспертом
+          </button>
+          <button type="button" class="btn btn--primary btn--small" @click="$emit('back')">
+            Запросить консультацию
+          </button>
         </div>
       </article>
     </div>
@@ -105,7 +146,10 @@
 </template>
 
 <script setup>
-defineProps({
+import { ref, onMounted, watch } from 'vue'
+import { graphqlRequest } from '../utils/graphqlClient.js'
+
+const props = defineProps({
   user: {
     type: Object,
     default: null,
@@ -116,7 +160,126 @@ defineProps({
   },
 });
 
-defineEmits(['back', 'open-auth', 'logout']);
+const emit = defineEmits(['back', 'open-auth', 'logout', 'open-chat', 'open-constructor']);
+
+const projects = ref([])
+const loadingProjects = ref(false)
+
+const GET_USER_PROJECTS_QUERY = `
+  query GetUserProjects($user_id: ID!) {
+    getUserProjects(user_id: $user_id) {
+      id
+      status
+      createdAt
+      clientTimestamp
+      plan {
+        address
+        area
+        source
+        layoutType
+        familyProfile
+        goal
+        prompt
+        ceilingHeight
+        floorDelta
+        recognitionStatus
+      }
+      geometry {
+        rooms {
+          id
+          name
+          height
+          vertices {
+            x
+            y
+          }
+        }
+      }
+      walls {
+        id
+        start {
+          x
+          y
+        }
+        end {
+          x
+          y
+        }
+        loadBearing
+        thickness
+        wallType
+      }
+      constraints {
+        forbiddenMoves
+        regionRules
+      }
+    }
+  }
+`
+
+const loadProjects = async () => {
+  if (!props.user?.id) {
+    projects.value = []
+    return
+  }
+
+  loadingProjects.value = true
+  try {
+    const data = await graphqlRequest(GET_USER_PROJECTS_QUERY, { user_id: String(props.user.id) })
+    projects.value = Array.isArray(data?.getUserProjects) ? data.getUserProjects : []
+    console.log('[Account] Loaded projects:', projects.value.length)
+  } catch (error) {
+    console.warn('Не удалось загрузить проекты:', error)
+    projects.value = []
+  } finally {
+    loadingProjects.value = false
+  }
+}
+
+const getStatusClass = (status) => {
+  if (!status) return 'default'
+
+  const s = String(status).toLowerCase()
+  if (s.includes('ready') || s.includes('done') || s.includes('success') || s.includes('готов')) {
+    return 'success'
+  }
+  if (s.includes('pending') || s.includes('processing') || s.includes('ожид') || s.includes('обработ')) {
+    return 'pending'
+  }
+  if (s.includes('error') || s.includes('failed') || s.includes('ошибка')) {
+    return 'error'
+  }
+  return 'default'
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '—'
+  try {
+    const date = new Date(dateString)
+    return date.toLocaleDateString('ru-RU', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    })
+  } catch {
+    return dateString
+  }
+}
+
+// Загружаем проекты при монтировании и при изменении пользователя
+onMounted(() => {
+  if (props.user) {
+    loadProjects()
+  }
+})
+
+watch(() => props.user, (newUser) => {
+  if (newUser) {
+    loadProjects()
+  } else {
+    projects.value = []
+  }
+})
 </script>
 
 <style scoped>
@@ -222,6 +385,88 @@ defineEmits(['back', 'open-auth', 'logout']);
   color: #c7cbe0;
 }
 
+.lk-card__loading {
+  text-align: center;
+  padding: 20px;
+  color: #c7cbe0;
+}
+
+.lk-card__empty {
+  text-align: center;
+  padding: 10px;
+  color: #c7cbe0;
+}
+
+.lk-card__projects {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.project-item {
+  padding: 16px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.project__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.project__status {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+.project__status--success {
+  background: rgba(76, 175, 80, 0.2);
+  color: #4caf50;
+}
+
+.project__status--pending {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.project__status--error {
+  background: rgba(244, 67, 54, 0.2);
+  color: #f44336;
+}
+
+.project__status--default {
+  background: rgba(158, 158, 158, 0.2);
+  color: #9e9e9e;
+}
+
+.project__details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.project__detail {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #c7cbe0;
+}
+
+.project__detail span:first-child {
+  color: #9aa3c0;
+}
+
+.project__actions {
+  display: flex;
+  gap: 8px;
+}
+
 .lk-card__pills {
   list-style: none;
   margin: 0;
@@ -291,6 +536,17 @@ defineEmits(['back', 'open-auth', 'logout']);
   .lk-card__actions .btn {
     width: 100%;
   }
+
+  .project__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .project__detail {
+    flex-direction: column;
+    gap: 2px;
+  }
 }
 
 @media (max-width: 480px) {
@@ -309,5 +565,3 @@ defineEmits(['back', 'open-auth', 'logout']);
   }
 }
 </style>
-
-
