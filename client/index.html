@@ -27,6 +27,12 @@
         z-index: 9999;
       }
 
+      #unityCanvas {
+        width: 100%;
+        height: 100%;
+        display: block;
+      }
+
       .unity-overlay {
         position: fixed;
         top: 0;
@@ -86,8 +92,10 @@
   <body>
     <div id="app"></div>
 
-    <!-- Unity Container -->
-    <div id="unityContainer"></div>
+    <!-- Unity Container с canvas элементом -->
+    <div id="unityContainer">
+      <canvas id="unityCanvas" tabindex="0"></canvas>
+    </div>
 
     <!-- Unity Loading Overlay -->
     <div id="unityOverlay" class="unity-overlay" style="display: none;">
@@ -117,8 +125,7 @@
         console.log('Проверка Unity API...');
         console.log('createUnityInstance:', typeof createUnityInstance);
         console.log('UnityLoader:', typeof UnityLoader);
-        
-        // Проверяем различные варианты API
+
         if (typeof createUnityInstance !== 'undefined') {
           return 'createUnityInstance';
         } else if (typeof UnityLoader !== 'undefined') {
@@ -131,7 +138,7 @@
       // Функция инициализации Unity
       function initUnity() {
         console.log('Инициализация Unity...');
-        
+
         // Показываем overlay загрузки
         const overlay = document.getElementById('unityOverlay');
         const progressBar = document.getElementById('unityProgress');
@@ -146,8 +153,11 @@
         if (apiType === 'createUnityInstance') {
           // Современный API (Unity 2020+)
           console.log('Используем createUnityInstance...');
-          
-          createUnityInstance(document.getElementById("unityContainer"), {
+
+          // Используем canvas элемент вместо div
+          const canvas = document.getElementById("unityCanvas");
+
+          createUnityInstance(canvas, {
             dataUrl: "/Build3D/Build/Build3D.data",
             frameworkUrl: "/Build3D/Build/Build3D.framework.js",
             codeUrl: "/Build3D/Build/Build3D.wasm",
@@ -155,7 +165,10 @@
             companyName: "HomePlanner3D",
             productName: "HomePlanner3D",
             productVersion: "1.0",
-          }, 
+            webglContextAttributes: {
+              preserveDrawingBuffer: false
+            }
+          },
           (progress) => {
             // Прогресс загрузки
             const percentage = Math.round(progress * 100);
@@ -182,7 +195,7 @@
         } else if (apiType === 'UnityLoader') {
           // Старый API (Unity до 2020)
           console.log('Используем UnityLoader...');
-          
+
           try {
             unityInstance = UnityLoader.instantiate(
               "unityContainer",
@@ -219,19 +232,11 @@
           <h2>Ошибка загрузки 3D</h2>
           <p>${message}</p>
           <div style="margin: 10px 0; font-size: 14px;">
-            Проверьте консоль браузера для подробной информации
+            Проблема с WebGL контекстом. Попробуйте другой браузер или обновите текущий.
           </div>
           <button class="unity-btn" onclick="location.reload()">Обновить страницу</button>
-          <button class="unity-btn" onclick="testUnityLoader()" style="background: #4CAF50;">Проверить загрузчик</button>
+          <button class="unity-btn" onclick="initUnity()" style="background: #ff6b6b;">Повторить загрузку</button>
         `;
-      }
-
-      function testUnityLoader() {
-        console.log('=== ТЕСТ ЗАГРУЗЧИКА UNITY ===');
-        console.log('Build3D.loader.js загружен:', typeof createUnityInstance !== 'undefined' || typeof UnityLoader !== 'undefined');
-        console.log('createUnityInstance:', typeof createUnityInstance);
-        console.log('UnityLoader:', typeof UnityLoader);
-        console.log('============================');
       }
 
       // Функция вызывается когда Unity загружен
