@@ -1,21 +1,31 @@
-MIT License
+HomePlanner3D Personal-Use License (HPL-PU)
 
 Copyright (c) 2025 CodeForge
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+1. Разрешённые действия
+   1.1. Получая копию программного обеспечения HomePlanner3D и сопутствующей документации (далее — «ПО»), вы можете:
+        a) использовать ПО исключительно в личных, некоммерческих целях;
+        b) просматривать, изменять и адаптировать исходный код;
+        c) распространять неизменённые или изменённые версии ПО при условии соблюдения настоящей лицензии;
+        d) включать части ПО в другие проекты, если конечное использование остаётся некоммерческим.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+2. Ограничения
+   2.1. Строго запрещается:
+        a) использовать ПО, его части или производные работы в коммерческих продуктах, услугах, SaaS-сервисах или для извлечения прибыли;
+        b) предоставлять доступ к ПО третьим лицам за плату или в составе платных предложений;
+        c) использовать ПО в условиях, когда конечный пользователь платит за доступ к функциональности, включающей ПО или его производные.
+   2.2. Любое коммерческое использование требует предварительного письменного согласия правообладателя.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+3. Условия распространения
+   3.1. Во всех копиях и производных работах необходимо сохранять настоящее уведомление об авторских правах и текст лицензии.
+   3.2. При распространении изменённых версий необходимо явно указывать изменения и дату модификации.
+
+4. Отказ от гарантий
+   4.1. ПО предоставляется «как есть», без каких-либо явных или подразумеваемых гарантий, включая (но не ограничиваясь) гарантиями товарной пригодности, соответствия конкретным целям и отсутствия нарушений прав.
+   4.2. Ни при каких условиях авторы или правообладатели не несут ответственности за ущерб, требования или другие обязательства, возникающие вследствие использования ПО или невозможности его использования.
+
+5. Прекращение действия лицензии
+   5.1. Лицензия автоматически прекращает действие при любом нарушении условий раздела 2.
+   5.2. После прекращения вы обязаны прекратить использование ПО и удалить все копии, которые не соответствуют условиям лицензии.
+
+Для получения коммерческой лицензии свяжитесь с CodeForge через канал, указанный в README проекта.
